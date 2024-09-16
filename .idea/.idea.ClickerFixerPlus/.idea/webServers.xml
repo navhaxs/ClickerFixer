@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="ca34df5f-a614-4e72-8ecf-55681be5e35a" name="192.168.0.241">
+        <fileTransfer rootFolder="/opt/clicker-fixer-app/" accessType="SFTP" host="clicker" port="22" sshConfigId="dd9e11d6-9b0f-4a38-a838-4bdbdfdec9c8" sshConfig="pi@clicker:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
