@@ -6,6 +6,8 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <AssemblyName>ClickerFixer.Client</AssemblyName>
+        <RootNamespace>ClickerFixer.Client</RootNamespace>
     </PropertyGroup>
 
 
@@ -16,8 +18,12 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.6"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.6"/>
+        <PackageReference Include="H.InputSimulator" Version="1.4.2" />
+        <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+        <PackageReference Include="NetOfficeFw.PowerPoint" Version="2.0.0-preview20" />
         <PackageReference Include="System.Management" Version="8.0.0" />
         <PackageReference Include="WatsonWebsocket" Version="4.1.2" />
+        <PackageReference Include="YamlDotNet" Version="16.1.2" />
     </ItemGroup>
 
 

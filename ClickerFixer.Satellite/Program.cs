@@ -11,6 +11,7 @@ namespace ClickerFixer.Satellite
         {
             Console.WriteLine("Starting Satellite App");
             Global.Init();
+            new MyServiceDiscovery();
             new MyWebServer();
             var myEvdevListener = new MyEvdevListener();
             
@@ -52,9 +53,34 @@ namespace ClickerFixer.Satellite
             //     Console.WriteLine();
             // };
             
-            while (true)
+            var tcs = new TaskCompletionSource();
+            var sigintReceived = false;
+            
+            Console.CancelKeyPress += (_, ea) =>
             {
-                if (Console.KeyAvailable)
+                // Tell .NET to not terminate the process
+                ea.Cancel = true;
+                Console.WriteLine("Received SIGINT (Ctrl+C)");
+                tcs.SetResult();
+                sigintReceived = true;
+            };
+
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                if (!sigintReceived)
+                {
+                    Console.WriteLine("Received SIGTERM");
+                    tcs.SetResult();
+                }
+                else
+                {
+                    Console.WriteLine("Received SIGTERM, ignoring it because already processed SIGINT");
+                }
+            };
+            
+            while (!tcs.Task.IsCompleted)
+            {
+                if (!Console.IsInputRedirected && Console.KeyAvailable)
                 {
                     ConsoleKey key = Console.ReadKey(true).Key;
                     MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
