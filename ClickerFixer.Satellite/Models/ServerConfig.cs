@@ -2,6 +2,6 @@ namespace ClickerFixer.Satellite;
 
 internal class ServerConfig
 {
-	public int Port { get; set; } = 8980;
+	public ushort Port { get; set; } = 8980;
 
 }

@@ -16,46 +16,33 @@ using ClickerFixer.Desktop.ClickerTargets;
 #nullable enable
 namespace ClickerFixer.Client.Services
 {
-  internal class HandleClickEventService
-  {
-    private List<IClickerTarget> _targets = new List<IClickerTarget>()
+    internal class HandleClickEventService
     {
-      (IClickerTarget) new ProPresenter(),
-      (IClickerTarget) new VisionScreens(),
-      (IClickerTarget) new PowerPoint(),
-      (IClickerTarget) new Native()
-    };
-
-    public void OnKeyReceived(KeyPressEventMessage e)
-    {
-      foreach (IClickerTarget target in this._targets)
-      {
-        if (target.IsActive())
+        private List<IClickerTarget> _targets = new()
         {
-          string name = target.GetType().Name;
-          DefaultInterpolatedStringHandler interpolatedStringHandler = new DefaultInterpolatedStringHandler(1, 2);
-          interpolatedStringHandler.AppendFormatted(name);
-          interpolatedStringHandler.AppendLiteral(" ");
-          interpolatedStringHandler.AppendFormatted<int>(e.KeyCode);
-          Console.WriteLine(interpolatedStringHandler.ToStringAndClear());
-          if (e.KeyCode == 105)
-          {
-            Console.WriteLine("Left");
-            target.SendPrevious();
-            break;
-          }
-          if (e.KeyCode != 106)
-            break;
-          Console.WriteLine("Right");
-          target.SendNext();
-          break;
-        }
-      }
-    }
+            new ProPresenter(),
+            new VisionScreens(),
+            new PowerPoint(),
+            new Native()
+        };
 
-    private Type[] GetClassesInNamespace(Assembly assembly, string nameSpace)
-    {
-      return ((IEnumerable<Type>) assembly.GetTypes()).Where<Type>((Func<Type, bool>) (t => !t.IsInterface && string.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))).ToArray<Type>();
+        public void OnKeyReceived(KeyPressEventMessage e)
+        {
+            var activeClickerTarget = _targets.Find(x => x.IsActive());
+            if (activeClickerTarget == null)
+                return;
+            
+            string name = activeClickerTarget.GetType().Name;
+            Console.WriteLine($"Action: {name} {e.KeyCode}");
+            switch (e.KeyCode)
+            {
+                case 105:
+                    activeClickerTarget.SendPrevious();
+                    break;
+                case 106:
+                    activeClickerTarget.SendNext();
+                    break;
+            }
+        }
     }
-  }
 }

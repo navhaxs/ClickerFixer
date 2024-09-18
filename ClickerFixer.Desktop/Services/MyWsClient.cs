@@ -13,6 +13,9 @@ internal class MyWsClient
 
 	public delegate void StatusUpdateHandler(object sender);
 	public event StatusUpdateHandler OnUpdateStatus;
+	
+	public delegate void DisconnectHandler(object sender);
+	public event DisconnectHandler OnDisconnect;
 
 	private void UpdateStatus()
 	{
@@ -24,20 +27,28 @@ internal class MyWsClient
 
 	private HandleClickEventService test;
 	
-	public MyWsClient()
+	public MyWsClient(string serverIp, int port)
 	{
-
-		client = new WatsonWsClient("192.168.0.197", 8980);
+		client = new WatsonWsClient(serverIp, port);
+		client.ConfigureOptions(options => options.KeepAliveInterval = TimeSpan.FromSeconds(10));
 		test = new HandleClickEventService();
 
 		client.MessageReceived += ClientOnMessageReceived;
-		client.Start();
+		client.ServerDisconnected += (e, o) =>
+		{
+			if (OnDisconnect == null) return;
+			OnDisconnect(this);
+		};
+		if (!client.Connected)
+		{
+			client.Start();
+		}
 	}
 
 	private void ClientOnMessageReceived(object? sender, MessageReceivedEventArgs e)
 	{
 		UpdateStatus();
-		Console.WriteLine("MessageReceived: " + e.Client.ToString() + " " + System.Text.Encoding.Default.GetString(e.Data));
+		Console.WriteLine("MessageReceived: " + e.Client.IpPort + " " + System.Text.Encoding.Default.GetString(e.Data));
 		var x = System.Text.Encoding.Default.GetString(e.Data);
 		test.OnKeyReceived(JsonSerializer.Deserialize<KeyPressEventMessage>(x));
 	}

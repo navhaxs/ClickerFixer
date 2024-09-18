@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using ClickerFixer.Client;
 using ClickerFixer.Client.Services;
-using ClickerFixer.Desktop.Services;
 
 namespace ClickerFixer.Desktop;
 
@@ -14,10 +13,9 @@ public partial class MainWindow : Window
         Global.Init();
 
         Discovery d = new Discovery();
-
+        d.Start();
         // TODO move inside Discovery
-        MyWsClient v = new MyWsClient();
-        v.OnUpdateStatus += (sender) =>
+        d.OnTrigger += sender =>
         {
             PART_Ripple.TriggerRipple();
         };

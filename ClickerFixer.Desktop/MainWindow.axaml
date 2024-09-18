@@ -3,19 +3,39 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ripple="clr-namespace:Material.Ripple"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClickerFixer.Desktop.MainWindow"
         Title="ClickerFixer.Desktop">
-        <ripple:RippleEffect Name="PART_Ripple"
-                             RippleFill="Red"
-                             RippleOpacity="0.3">
-            <Border Background="#212121"
-                    CornerRadius="3">
-                <TextBlock HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontSize="20"
-                           Foreground="#E6E7E8"
-                           Text="RIPPLE" />
-            </Border>
-        </ripple:RippleEffect>
+
+    <Window.Styles>
+        <Style Selector="avalonia|MaterialIcon">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+        <Style Selector="avalonia|MaterialIcon:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+    </Window.Styles>
+    
+    <Border Background="#212121"
+            ZIndex="999"
+            CornerRadius="3">
+        <!-- <TextBlock HorizontalAlignment="Center" -->
+        <!--            VerticalAlignment="Center" -->
+        <!--            FontSize="20" -->
+        <!--            Foreground="#E6E7E8" -->
+        <!--            Text="RIPPLE" /> -->
+        <Grid>
+            <avalonia:MaterialIcon Kind="ChevronRight" Foreground="White" Width="60" Height="60">
+                <avalonia:MaterialIcon.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                    </Transitions>
+                </avalonia:MaterialIcon.Transitions>
+            </avalonia:MaterialIcon>
+            <ripple:RippleEffect Name="PART_Ripple"
+                                 RippleFill="Red"
+                                 RippleOpacity="0.3" />
+        </Grid>
+    </Border>
 </Window>

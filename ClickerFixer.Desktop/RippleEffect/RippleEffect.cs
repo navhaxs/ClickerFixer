@@ -33,6 +33,7 @@ namespace Material.Ripple {
             _container = thisVisual.Compositor.CreateContainerVisual();
             _container.Size = new Vector(Bounds.Width, Bounds.Height);
             ElementComposition.SetElementChildVisual(this, _container);
+            this.ZIndex = -999;
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {

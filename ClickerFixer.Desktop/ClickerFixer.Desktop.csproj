@@ -1,13 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <AssemblyName>ClickerFixer.Client</AssemblyName>
         <RootNamespace>ClickerFixer.Client</RootNamespace>
+        <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
 
 
@@ -20,6 +21,7 @@
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.6"/>
         <PackageReference Include="H.InputSimulator" Version="1.4.2" />
         <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+        <PackageReference Include="Material.Icons.Avalonia" Version="2.1.10" />
         <PackageReference Include="NetOfficeFw.PowerPoint" Version="2.0.0-preview20" />
         <PackageReference Include="System.Management" Version="8.0.0" />
         <PackageReference Include="WatsonWebsocket" Version="4.1.2" />

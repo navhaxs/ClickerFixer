@@ -11,7 +11,7 @@ namespace ClickerFixer.Satellite
         {
             Console.WriteLine("Starting Satellite App");
             Global.Init();
-            new MyServiceDiscovery();
+            new MyServiceAdvertisement();
             new MyWebServer();
             var myEvdevListener = new MyEvdevListener();
             

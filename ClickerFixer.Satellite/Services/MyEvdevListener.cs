@@ -121,16 +121,29 @@ internal class MyEvdevListener : IDisposable
         activeDevices.Add(device);
         Console.WriteLine(device.Name ?? "");
         Console.WriteLine(JsonSerializer.Serialize(device) ?? "");
+
+
+        EvDevKeyValue? previous_value = null;
         device.OnKeyEvent += delegate(object s, OnKeyEventArgs e)
         {
-            if (e.Value == EvDevKeyValue.KeyUp)
-            {
+            
+            if (previous_value != null && previous_value == EvDevKeyValue.KeyDown && e.Value == EvDevKeyValue.KeyUp) {
                 Console.WriteLine($"Button: {e.Key}\t{e.Key}\tState: {e.Value}");
                 MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
                 {
                     KeyCode = (int)e.Key
                 }));
             }
+
+            previous_value = e.Value;
+            // if (e.Value == EvDevKeyValue.KeyUp)
+            // {
+            //     Console.WriteLine($"Button: {e.Key}\t{e.Key}\tState: {e.Value}");
+            //     MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
+            //     {
+            //         KeyCode = (int)e.Key
+            //     }));
+            // }
         };
         device.StartMonitoring();
     }
