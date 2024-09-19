@@ -1,21 +1,23 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net;
-using System.Text.Json;
 using System.Threading;
-using ClickerFixer.Desktop.Services;
+using Avalonia.Collections;
 using Makaretu.Dns;
 
-namespace ClickerFixer.Client.Services;
+namespace ClickerFixer.Desktop.Services;
 
 public class Discovery
 {
-    public delegate void StatusUpdateHandler(object sender);
+    public delegate void StatusUpdateHandler(object sender, CompletedAction msg);
 
     public event StatusUpdateHandler OnTrigger;
 
-    private HashSet<IPAddress> ConnectedSatellites = new();
-    private ServiceDiscovery sd = new ServiceDiscovery();
+    public AvaloniaList<IPAddress> ConnectedSatellites { get; set; } = new();
+    private ServiceDiscovery sd = new();
+
+    private object _lock = new();
 
     public Discovery()
     {
@@ -30,24 +32,27 @@ public class Discovery
             var srvRecord = serviceName.Message.AdditionalRecords.Find(x => x is SRVRecord);
             if (aRecord is null || srvRecord is null)
                 return;
-            
+
             var ipAddress = ((ARecord)aRecord).Address;
             var port = ((SRVRecord)srvRecord).Port;
+            
+            lock (_lock)
+            {
+                if (ConnectedSatellites.FirstOrDefault(i => i.ToString().Equals(ipAddress.ToString())) != null)
+                    return;
 
-            if (ConnectedSatellites.Contains(ipAddress))
-                return;
-                
-            var wsClient = new MyWsClient(ipAddress.ToString(), port);
-            wsClient.OnUpdateStatus += (sender) => { OnTrigger?.Invoke(this); };
-            wsClient.OnDisconnect += (sender) => { ConnectedSatellites.Remove(ipAddress); };
-            ConnectedSatellites.Add(ipAddress);
+                var wsClient = new MyWsClient(ipAddress.ToString(), port);
+                wsClient.OnTrigger += (sender, msg) => { OnTrigger?.Invoke(this, msg); };
+                wsClient.OnDisconnect += (sender) => { ConnectedSatellites.Remove(ipAddress); };
+                ConnectedSatellites.Add(ipAddress);
+            }
         });
     }
-    
+
     public async void Start()
     {
         sd.QueryServiceInstances("_clicker._tcp");
-        
+
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
 
         while (await timer.WaitForNextTickAsync())
@@ -55,6 +60,4 @@ public class Discovery
             sd.QueryServiceInstances("_clicker._tcp");
         }
     }
-
-    public static Discovery Instance { get; } = new();
 }

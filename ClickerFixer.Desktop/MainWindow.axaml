@@ -4,38 +4,81 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ripple="clr-namespace:Material.Ripple"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:ui="clr-namespace:ClickerFixer.Desktop.UI"
+        xmlns:desktop="clr-namespace:ClickerFixer.Desktop"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClickerFixer.Desktop.MainWindow"
+        x:DataType="ui:MainViewModel"
         Title="ClickerFixer.Desktop">
 
-    <Window.Styles>
-        <Style Selector="avalonia|MaterialIcon">
-            <Setter Property="Opacity" Value="0.5" />
-        </Style>
-        <Style Selector="avalonia|MaterialIcon:pointerover">
-            <Setter Property="Opacity" Value="1" />
-        </Style>
-    </Window.Styles>
-    
+    <Window.Resources>
+        <Animation x:Key="ResourceAnimation"
+                   x:SetterTargetType="{x:Type avalonia:MaterialIcon}"
+                   IterationCount="1"
+                   FillMode="Forward"
+                   Duration="0:0:0.6">
+            <KeyFrame Cue="0%">
+                <Setter Property="Opacity" Value="1.0" />
+            </KeyFrame>
+            <KeyFrame Cue="100%">
+                <Setter Property="Opacity" Value="0.0" />
+            </KeyFrame>
+        </Animation>
+    </Window.Resources>
+
     <Border Background="#212121"
-            ZIndex="999"
-            CornerRadius="3">
-        <!-- <TextBlock HorizontalAlignment="Center" -->
-        <!--            VerticalAlignment="Center" -->
-        <!--            FontSize="20" -->
-        <!--            Foreground="#E6E7E8" -->
-        <!--            Text="RIPPLE" /> -->
+            ZIndex="999">
         <Grid>
-            <avalonia:MaterialIcon Kind="ChevronRight" Foreground="White" Width="60" Height="60">
-                <avalonia:MaterialIcon.Transitions>
-                    <Transitions>
-                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
-                    </Transitions>
-                </avalonia:MaterialIcon.Transitions>
-            </avalonia:MaterialIcon>
+            <avalonia:MaterialIcon
+                Kind="ChevronRight"
+                Foreground="White"
+                Opacity="0"
+                Width="60" Height="60"
+                Name="PART_Icon" />
             <ripple:RippleEffect Name="PART_Ripple"
+                                 IsHitTestVisible="False"
                                  RippleFill="Red"
                                  RippleOpacity="0.3" />
+            <ItemsControl ItemsSource="{Binding Discovery.ConnectedSatellites}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="6">
+                            <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12" Margin="6" />
+                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="desktop:CompletedAction">
+                        <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
+                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
+                                <TextBlock.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                    </Transitions>
+                                </TextBlock.Transitions>
+                                <TextBlock.Styles>
+                                    <Style Selector="TextBlock">
+                                        <Style.Animations>
+                                            <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
+                                                <KeyFrame Cue="0%">
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </KeyFrame>
+                                                <KeyFrame Cue="100%">
+                                                    <Setter Property="Opacity" Value="0.0" />
+                                                </KeyFrame>
+                                            </Animation>
+                                        </Style.Animations>
+                                    </Style>
+                                </TextBlock.Styles>
+                            </TextBlock>
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Grid>
     </Border>
 </Window>

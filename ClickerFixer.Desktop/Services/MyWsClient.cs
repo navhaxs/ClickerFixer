@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
-using ClickerFixer.Client;
-using ClickerFixer.Client.Services;
+using ClickerFixer.Desktop;
+using ClickerFixer.Desktop.Services;
 using ClickerFixer.Data;
 using WatsonWebsocket;
 
@@ -11,18 +11,18 @@ internal class MyWsClient
 {
 	public static WatsonWsClient client;
 
-	public delegate void StatusUpdateHandler(object sender);
-	public event StatusUpdateHandler OnUpdateStatus;
+	public delegate void StatusUpdateHandler(object sender, CompletedAction msg);
+	public event StatusUpdateHandler OnTrigger;
 	
 	public delegate void DisconnectHandler(object sender);
 	public event DisconnectHandler OnDisconnect;
 
-	private void UpdateStatus()
+	private void UpdateStatus(CompletedAction msg)
 	{
 		// Make sure someone is listening to event
-		if (OnUpdateStatus == null) return;
+		if (OnTrigger == null) return;
 
-		OnUpdateStatus(this);
+		OnTrigger(this, msg);
 	}
 
 	private HandleClickEventService test;
@@ -47,10 +47,11 @@ internal class MyWsClient
 
 	private void ClientOnMessageReceived(object? sender, MessageReceivedEventArgs e)
 	{
-		UpdateStatus();
+		var raw = System.Text.Encoding.Default.GetString(e.Data);
+		var msg = JsonSerializer.Deserialize<KeyPressEventMessage>(raw);
 		Console.WriteLine("MessageReceived: " + e.Client.IpPort + " " + System.Text.Encoding.Default.GetString(e.Data));
-		var x = System.Text.Encoding.Default.GetString(e.Data);
-		test.OnKeyReceived(JsonSerializer.Deserialize<KeyPressEventMessage>(x));
+		var completedAction = test.OnKeyReceived(msg);
+		UpdateStatus(completedAction);
 	}
 
 }

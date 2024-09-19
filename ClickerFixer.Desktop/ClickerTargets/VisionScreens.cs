@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: ClickerFixer.Client.ClickerTargets.VisionScreens
-// Assembly: ClickerFixer.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: ClickerFixer.Desktop.ClickerTargets.VisionScreens
+// Assembly: ClickerFixer.Desktop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 71A8AC6C-045E-4BCB-810F-1DCB1DB4956B
-// Assembly location: C:\Users\Jeremy\Desktop\clicker-fixer-app\ClickerFixer.Client.dll
+// Assembly location: C:\Users\Jeremy\Desktop\clicker-fixer-app\ClickerFixer.Desktop.dll
 
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using System.Threading;
 using ClickerFixer.Desktop.ClickerTargets;
 
 #nullable enable
-namespace ClickerFixer.Client.ClickerTargets
+namespace ClickerFixer.Desktop.ClickerTargets
 {
   internal class VisionScreens : IClickerTarget, IDisposable
   {

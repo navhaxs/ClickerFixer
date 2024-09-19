@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: ClickerFixer.Client.ClickerTargets.ProPresenter
-// Assembly: ClickerFixer.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: ClickerFixer.Desktop.ClickerTargets.ProPresenter
+// Assembly: ClickerFixer.Desktop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 71A8AC6C-045E-4BCB-810F-1DCB1DB4956B
-// Assembly location: C:\Users\Jeremy\Desktop\clicker-fixer-app\ClickerFixer.Client.dll
+// Assembly location: C:\Users\Jeremy\Desktop\clicker-fixer-app\ClickerFixer.Desktop.dll
 
 #nullable enable
 using System;
@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
-using ClickerFixer.Client;
+using ClickerFixer.Desktop;
 using ClickerFixer.Interop;
 using WatsonWebsocket;
 

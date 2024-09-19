@@ -122,11 +122,9 @@ internal class MyEvdevListener : IDisposable
         Console.WriteLine(device.Name ?? "");
         Console.WriteLine(JsonSerializer.Serialize(device) ?? "");
 
-
         EvDevKeyValue? previous_value = null;
         device.OnKeyEvent += delegate(object s, OnKeyEventArgs e)
         {
-            
             if (previous_value != null && previous_value == EvDevKeyValue.KeyDown && e.Value == EvDevKeyValue.KeyUp) {
                 Console.WriteLine($"Button: {e.Key}\t{e.Key}\tState: {e.Value}");
                 MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage

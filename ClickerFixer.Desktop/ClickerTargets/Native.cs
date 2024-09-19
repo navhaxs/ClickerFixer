@@ -3,7 +3,7 @@ using ClickerFixer.Desktop.ClickerTargets;
 using WindowsInput;
 
 #nullable disable
-namespace ClickerFixer.Client.ClickerTargets
+namespace ClickerFixer.Desktop.ClickerTargets
 {
   internal class Native : IClickerTarget, IDisposable
   {

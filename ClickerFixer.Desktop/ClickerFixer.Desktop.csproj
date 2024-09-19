@@ -6,8 +6,6 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-        <AssemblyName>ClickerFixer.Client</AssemblyName>
-        <RootNamespace>ClickerFixer.Client</RootNamespace>
         <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
 
@@ -31,5 +29,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ClickerFixer.Data\ClickerFixer.Data.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <AdditionalFiles Include="UI\RippleEffect\Theme.axaml" />
     </ItemGroup>
 </Project>
