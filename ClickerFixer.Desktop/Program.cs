@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using Avalonia.ReactiveUI;
 
 namespace ClickerFixer.Desktop;
 
@@ -17,5 +18,6 @@ class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
+            .UseReactiveUI()
             .LogToTrace();
 }

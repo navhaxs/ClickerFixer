@@ -4,6 +4,7 @@
 // MVID: 71A8AC6C-045E-4BCB-810F-1DCB1DB4956B
 // Assembly location: C:\Users\Jeremy\Desktop\clicker-fixer-app\ClickerFixer.Desktop.dll
 
+using System;
 using System.IO;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;

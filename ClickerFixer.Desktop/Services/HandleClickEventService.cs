@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using ClickerFixer.Desktop.ClickerTargets;
+using WindowsInput;
 
 #nullable enable
 namespace ClickerFixer.Desktop.Services
@@ -27,20 +28,27 @@ namespace ClickerFixer.Desktop.Services
         };
 
         private int i;
+
         public CompletedAction? OnKeyReceived(KeyPressEventMessage e)
         {
             var activeClickerTarget = _targets.Find(x => x.IsActive());
             if (activeClickerTarget == null)
                 return null;
-            
+
             string name = activeClickerTarget.GetType().Name;
             switch (e.KeyCode)
             {
-                case 105:
+                case 37:
                     activeClickerTarget.SendPrevious();
                     break;
-                case 106:
+                case 39:
                     activeClickerTarget.SendNext();
+                    break;
+                default:
+                    if (activeClickerTarget is Native)
+                    {
+                        new InputSimulator().Keyboard.KeyPress((VirtualKeyCode)e.KeyCode);
+                    }
                     break;
             }
 

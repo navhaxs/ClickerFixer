@@ -6,6 +6,8 @@
         <entry key="ClickerFixer.Desktop/App.axaml" value="ClickerFixer.Desktop/ClickerFixer.Desktop.csproj" />
         <entry key="ClickerFixer.Desktop/MainWindow.axaml" value="ClickerFixer.Desktop/ClickerFixer.Desktop.csproj" />
         <entry key="ClickerFixer.Desktop/RippleEffect/Theme.axaml" value="ClickerFixer.Desktop/ClickerFixer.Desktop.csproj" />
+        <entry key="ClickerFixer.Desktop/UI/RippleEffect/Theme.axaml" value="ClickerFixer.Desktop/ClickerFixer.Desktop.csproj" />
+        <entry key="ClickerFixer.Desktop/UI/Styles/AppStyles.axaml" value="ClickerFixer.Desktop/ClickerFixer.Desktop.csproj" />
       </map>
     </option>
   </component>

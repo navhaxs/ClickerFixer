@@ -1,19 +1,31 @@
-using ClickerFixer.Data;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Net;
+using Avalonia.Collections;
+using Avalonia.Controls;
 using ClickerFixer.Desktop.Services;
+using ReactiveUI;
 
 namespace ClickerFixer.Desktop.UI;
 
-public class MainViewModel
+public class MainViewModel : ReactiveObject
 {
-    private readonly Discovery _discovery;
 
     public delegate void StatusUpdateHandler(object sender, CompletedAction msg);
     public event StatusUpdateHandler? OnTrigger;
 
+    private Discovery _discovery;
     public Discovery Discovery
     {
         get => _discovery;
-        init => _discovery = value;
+        init => this.RaiseAndSetIfChanged(ref _discovery, value);
+    }
+    
+    private readonly ObservableAsPropertyHelper<string> _status;
+
+    public string Status
+    {
+        get => _status.Value;
     }
 
     public MainViewModel()
@@ -29,7 +41,16 @@ public class MainViewModel
             }
             OnTrigger(this, msg);
         };
+
+        _status = this.WhenAnyValue(x => x.Discovery.Test,  (string result) => result)
+            .ToProperty(this, x => x.Status);
+        //
+        // _status = this.WhenAnyValue(x => x.Discovery.ConnectedSatellites,  (ObservableCollection<IPAddress> list) => (list.Count > 0) ? "Connected" : "Disconnected")
+        //     .ToProperty(this, x => x.Status);
+        //
+        if (Design.IsDesignMode)
+            return;
         
-        Discovery.Start();
+        Task.Delay(2000).ContinueWith((x) => { Discovery.Start(); });
     }
 }

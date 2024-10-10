@@ -6,12 +6,25 @@
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:ui="clr-namespace:ClickerFixer.Desktop.UI"
         xmlns:desktop="clr-namespace:ClickerFixer.Desktop"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:converters="clr-namespace:ClickerFixer.Desktop.UI.Converters"
+        mc:Ignorable="d" Width="280" Height="380"
         x:Class="ClickerFixer.Desktop.MainWindow"
         x:DataType="ui:MainViewModel"
-        Title="ClickerFixer.Desktop">
+        Title="ClickerFixer.Desktop"
+        CanResize="False"
+        ShowInTaskbar="False"
+        CornerRadius="6"
+        ExtendClientAreaChromeHints="SystemChrome,PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="90"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Design.DataContext>
+        <ui:DesignMainViewModel />
+    </Design.DataContext>
 
     <Window.Resources>
+        <converters:ArrayIsEmptyVisibilityConverter x:Key="ArrayIsEmptyVisibilityConverter" />
+        <converters:ArrayNotEmptyVisibilityConverter x:Key="ArrayNotEmptyVisibilityConverter" />
         <Animation x:Key="ResourceAnimation"
                    x:SetterTargetType="{x:Type avalonia:MaterialIcon}"
                    IterationCount="1"
@@ -27,7 +40,8 @@
     </Window.Resources>
 
     <Border Background="#212121"
-            ZIndex="999">
+            ZIndex="999"
+            IsHitTestVisible="False">
         <Grid>
             <avalonia:MaterialIcon
                 Kind="ChevronRight"
@@ -39,16 +53,46 @@
                                  IsHitTestVisible="False"
                                  RippleFill="Red"
                                  RippleOpacity="0.3" />
-            <ItemsControl ItemsSource="{Binding Discovery.ConnectedSatellites}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel Margin="6">
-                            <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12" Margin="6" />
-                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" />
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+
+            <DockPanel VerticalAlignment="Center" Margin="0 100 0 0">
+
+                <ItemsRepeater  ItemsSource="{Binding Discovery.ConnectedSatellites}"
+                                DockPanel.Dock="Bottom">
+                    <ItemsRepeater.Layout>
+                            <UniformGridLayout ItemsJustification="SpaceAround"
+                                               MaximumRowsOrColumns="1"
+                                               MinRowSpacing="6"/>
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="99" Background="#383838" HorizontalAlignment="Center">
+                                <DockPanel Margin="4 2 12 2">
+                                    <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12" Margin="6" />
+                                    <TextBlock FontSize="14" Foreground="White" Text="{Binding}"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Grid>
+                    <TextBlock
+                        FontSize="22"
+                        Margin="0 10"
+                        Text="Connected"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayNotEmptyVisibilityConverter}}" />
+
+                    <TextBlock
+                        FontSize="22"
+                        Margin="0 10"
+                        Text="Disconnected"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayIsEmptyVisibilityConverter}}" />
+                </Grid>
+
+            </DockPanel>
 
             <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
                 <ItemsControl.ItemTemplate>

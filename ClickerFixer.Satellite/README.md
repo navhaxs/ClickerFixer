@@ -1,4 +1,6 @@
 
+sudo mkdir /opt/clicker-fixer-app/
+
 ```
 sudo systemctl start clicker.service
 sudo systemctl stop clicker.service
@@ -21,3 +23,5 @@ User=pi
 [Install]
 WantedBy=multi-user.target
 ```
+
+sudo systemctl start clicker.service

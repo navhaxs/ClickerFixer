@@ -1,0 +1,39 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <StackPanel Spacing="20">
+                <ThemeVariantScope RequestedThemeVariant="Dark">
+                    <Border Background="Black">
+                        <CaptionButtons Height="30"/>
+                    </Border>
+                </ThemeVariantScope>
+                <ThemeVariantScope RequestedThemeVariant="Light">
+                    <CaptionButtons Height="30"/>
+                </ThemeVariantScope>
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+    
+    <!-- Add Resources here -->
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <!-- BaseResources for CaptionButtons.xaml -->
+                    <SolidColorBrush x:Key="CaptionButtonForeground" Color="Black" />
+                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="#484b4d" />
+                    <SolidColorBrush x:Key="CaptionButtonBorderBrush" Color="#ffcacaca" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- BaseResources for CaptionButtons.xaml -->
+                    <SolidColorBrush x:Key="CaptionButtonForeground" Color="White" />
+                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="#484b4d" />
+                    <SolidColorBrush x:Key="CaptionButtonBorderBrush" Color="#ffcacaca" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+</Styles>

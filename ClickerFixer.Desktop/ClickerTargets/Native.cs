@@ -15,9 +15,6 @@ namespace ClickerFixer.Desktop.ClickerTargets
 
     void IClickerTarget.SendNext() => new InputSimulator().Keyboard.KeyPress(VirtualKeyCode.RIGHT);
 
-    void IClickerTarget.SendPrevious()
-    {
-      new InputSimulator().Keyboard.KeyPress(VirtualKeyCode.LEFT);
-    }
+    void IClickerTarget.SendPrevious() => new InputSimulator().Keyboard.KeyPress(VirtualKeyCode.LEFT);
   }
 }

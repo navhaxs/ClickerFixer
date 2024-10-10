@@ -110,14 +110,11 @@ public unsafe sealed partial class EvDevDevice : IDisposable
     /// </summary>
     public void StopMonitoring()
     {
-        Console.WriteLine("1");
         cts?.Cancel();
-        Console.WriteLine("2");
         if (monitoringTask?.IsCompleted == false)
         {
             monitoringTask?.Wait(TimeSpan.FromSeconds(1));
         }
-        Console.WriteLine("3");
     }
 
     public void Dispose() => StopMonitoring();

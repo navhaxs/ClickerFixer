@@ -15,8 +15,6 @@ namespace ClickerFixer.Satellite
             new MyWebServer();
             var myEvdevListener = new MyEvdevListener();
             
-            
-            
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             
