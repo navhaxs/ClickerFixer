@@ -16,6 +16,7 @@ namespace ClickerFixer.Desktop
   {
     private const string CONFIG_FILE = "app.yml";
     public static Config Config;
+    public static bool StartAsMinimized = false;
 
     public static void Init()
     {

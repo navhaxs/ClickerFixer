@@ -21,16 +21,9 @@
             <TrayIcon
                 Icon="/Resources/tray_default.png"
                       Clicked="TrayIcon_OnClicked"
-                      ToolTipText="Avalonia Tray Icon ToolTip">
+                      ToolTipText="Presentation Clicker Remote">
                 <TrayIcon.Menu>
                     <NativeMenu>
-                        <NativeMenuItem Header="Settings">
-                            <NativeMenu>
-                                <NativeMenuItem Header="Option 1" />
-                                <NativeMenuItem Header="Option 2" />
-                                <NativeMenuItemSeparator />
-                            </NativeMenu>
-                        </NativeMenuItem>
                         <NativeMenuItem Header="Exit" Click="NativeMenuItem_Exit_OnClick" />
                     </NativeMenu>
                 </TrayIcon.Menu>

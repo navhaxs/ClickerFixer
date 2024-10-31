@@ -36,13 +36,16 @@ namespace ClickerFixer.Desktop.Services
                 return null;
 
             string name = activeClickerTarget.GetType().Name;
+            ActionType? action = null;
             switch (e.KeyCode)
             {
                 case 37:
                     activeClickerTarget.SendPrevious();
+                    action = ActionType.PREVIOUS;
                     break;
                 case 39:
                     activeClickerTarget.SendNext();
+                    action = ActionType.NEXT;
                     break;
                 default:
                     if (activeClickerTarget is Native)
@@ -52,7 +55,7 @@ namespace ClickerFixer.Desktop.Services
                     break;
             }
 
-            var x = new CompletedAction { Index = i++, Target = name, KeyCode = e.KeyCode };
+            var x = new CompletedAction { Index = i++, Target = name, KeyCode = e.KeyCode, Action = action };
             Console.WriteLine(x);
             return x;
         }

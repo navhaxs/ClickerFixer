@@ -23,6 +23,9 @@ public partial class MainWindow : Window
         if (Design.IsDesignMode)
             return;
 
+        if (Global.StartAsMinimized)
+            WindowState = WindowState.Minimized;
+
         IntPtr handle = TryGetPlatformHandle().Handle;
 
         NativeMethods.SetWindowLong(handle, NativeMethods.GWL_EXSTYLE,
@@ -92,12 +95,12 @@ public partial class MainWindow : Window
                     _cancellationTokenSource = new CancellationTokenSource();
                     var animation = (Animation)this.Resources["ResourceAnimation"];
 
-                    switch (msg.KeyCode)
+                    switch (msg.Action)
                     {
-                        case 37:
+                        case ActionType.PREVIOUS:
                             PART_Icon.Kind = MaterialIconKind.ChevronLeft;
                             break;
-                        case 39:
+                        case ActionType.NEXT:
                             PART_Icon.Kind = MaterialIconKind.ChevronRight;
                             break;
                         default:

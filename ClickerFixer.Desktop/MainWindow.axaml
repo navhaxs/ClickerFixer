@@ -43,6 +43,36 @@
             ZIndex="999"
             IsHitTestVisible="False">
         <Grid>
+            <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="desktop:CompletedAction">
+                        <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
+                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
+                                <TextBlock.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                    </Transitions>
+                                </TextBlock.Transitions>
+                                <TextBlock.Styles>
+                                    <Style Selector="TextBlock">
+                                        <Style.Animations>
+                                            <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
+                                                <KeyFrame Cue="0%">
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </KeyFrame>
+                                                <KeyFrame Cue="100%">
+                                                    <Setter Property="Opacity" Value="0.0" />
+                                                </KeyFrame>
+                                            </Animation>
+                                        </Style.Animations>
+                                    </Style>
+                                </TextBlock.Styles>
+                            </TextBlock>
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            
             <avalonia:MaterialIcon
                 Kind="ChevronRight"
                 Foreground="White"
@@ -93,36 +123,6 @@
                 </Grid>
 
             </DockPanel>
-
-            <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="desktop:CompletedAction">
-                        <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
-                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
-                                <TextBlock.Transitions>
-                                    <Transitions>
-                                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
-                                    </Transitions>
-                                </TextBlock.Transitions>
-                                <TextBlock.Styles>
-                                    <Style Selector="TextBlock">
-                                        <Style.Animations>
-                                            <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
-                                                <KeyFrame Cue="0%">
-                                                    <Setter Property="Opacity" Value="1.0" />
-                                                </KeyFrame>
-                                                <KeyFrame Cue="100%">
-                                                    <Setter Property="Opacity" Value="0.0" />
-                                                </KeyFrame>
-                                            </Animation>
-                                        </Style.Animations>
-                                    </Style>
-                                </TextBlock.Styles>
-                            </TextBlock>
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
         </Grid>
     </Border>
 </Window>
