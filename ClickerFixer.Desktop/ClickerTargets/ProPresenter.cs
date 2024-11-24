@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using ClickerFixer.Interop;
-using WatsonWebsocket;
+using Websocket.Client;
 
 // https://jeffmikels.github.io/ProPresenter-API/Pro7/
 
@@ -147,61 +147,51 @@ namespace ClickerFixer.Desktop.ClickerTargets
 
         private void WebsocketWorkerLoop()
         {
-            using (WatsonWsClient client = new WatsonWsClient(this.url))
+            using (var client = new WebsocketClient(url))
             {
-                client.ServerConnected += (object sender, EventArgs e) =>
+                client.ReconnectTimeout = new TimeSpan?(TimeSpan.FromSeconds(15.0));
+                client.ReconnectionHappened.Subscribe<ReconnectionInfo>((Action<ReconnectionInfo>) (info =>
                 {
-                    Console.WriteLine("[ProPresenter] Connection happened");
-
-                    if (Global.Config.TargetsConfig.ProPresenterConfig.Password.Length > 0)
+                  Console.WriteLine("Reconnection happened, type: " + info.Type.ToString());
+                  client.Send(JsonSerializer.Serialize<Dictionary<string, object>>(new Dictionary<string, object>()
+                  {
                     {
-                        client.SendAsync(JsonSerializer.Serialize<Dictionary<string, object>>(
-                            new Dictionary<string, object>()
-                            {
-                                {
-                                    "action",
-                                    (object)"authenticate"
-                                },
-                                {
-                                    "protocol",
-                                    (object)"701"
-                                },
-                                {
-                                    "password",
-                                    (object)Global.Config.TargetsConfig.ProPresenterConfig.Password
-                                }
-                            }));
+                      "action",
+                      (object) "authenticate"
+                    },
+                    {
+                      "protocol",
+                      (object) "701"
+                    },
+                    {
+                      "password",
+                      (object) Global.Config.TargetsConfig.ProPresenterConfig.Password
                     }
-                };
-
-                client.MessageReceived += (sender, args) =>
-                {
-                    Console.WriteLine("[ProPresenter] Message received: " +  System.Text.Encoding.Default.GetString(args.Data));
-                };
+                  }));
+                }));
+                client.MessageReceived.Subscribe<ResponseMessage>((Action<ResponseMessage>) (msg => Console.WriteLine("[ProPresenter] Message received: " + msg?.ToString())));
                 client.Start();
                 CancellationToken token = this._cancelSource.Token;
                 while (!token.IsCancellationRequested)
                 {
-                    string message = (string)null;
-                    lock (this._locker)
+                  string message = (string) null;
+                  lock (this._locker)
+                  {
+                    if (this._tasks.Count > 0)
                     {
-                        if (this._tasks.Count > 0)
-                        {
-                            message = this._tasks.Dequeue();
-                            if (message == null)
-                                break;
-                        }
+                      message = this._tasks.Dequeue();
+                      if (message == null)
+                        break;
                     }
-
-                    if (message != null)
-                    {
-                        if (!client.Connected)
-                            client.Start();
-
-                        client.SendAsync(message);
-                    }
-                    else
-                        this._wh.WaitOne();
+                  }
+                  if (message != null)
+                  {
+                    if (!client.IsRunning)
+                      client.Start();
+                    client.Send(message);
+                  }
+                  else
+                    this._wh.WaitOne();
                 }
             }
         }
