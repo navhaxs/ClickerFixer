@@ -14,7 +14,7 @@
         CanResize="False"
         ShowInTaskbar="False"
         CornerRadius="6"
-        ExtendClientAreaChromeHints="SystemChrome,PreferSystemChrome"
+        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="90"
         ExtendClientAreaToDecorationsHint="True">
 
@@ -39,90 +39,103 @@
         </Animation>
     </Window.Resources>
 
-    <Border Background="#212121"
-            ZIndex="999"
-            IsHitTestVisible="False">
-        <Grid>
-            <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="desktop:CompletedAction">
-                        <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
-                            <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
-                                <TextBlock.Transitions>
-                                    <Transitions>
-                                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
-                                    </Transitions>
-                                </TextBlock.Transitions>
-                                <TextBlock.Styles>
-                                    <Style Selector="TextBlock">
-                                        <Style.Animations>
-                                            <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
-                                                <KeyFrame Cue="0%">
-                                                    <Setter Property="Opacity" Value="1.0" />
-                                                </KeyFrame>
-                                                <KeyFrame Cue="100%">
-                                                    <Setter Property="Opacity" Value="0.0" />
-                                                </KeyFrame>
-                                            </Animation>
-                                        </Style.Animations>
-                                    </Style>
-                                </TextBlock.Styles>
-                            </TextBlock>
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            
-            <avalonia:MaterialIcon
-                Kind="ChevronRight"
-                Foreground="White"
-                Opacity="0"
-                Width="60" Height="60"
-                Name="PART_Icon" />
-            <ripple:RippleEffect Name="PART_Ripple"
-                                 IsHitTestVisible="False"
-                                 RippleFill="Red"
-                                 RippleOpacity="0.3" />
+    <Grid>
 
-            <DockPanel VerticalAlignment="Center" Margin="0 100 0 0">
+        <Border Background="#212121"
+                IsHitTestVisible="False">
+            <Grid>
 
-                <ItemsRepeater  ItemsSource="{Binding Discovery.ConnectedSatellites}"
-                                DockPanel.Dock="Bottom">
-                    <ItemsRepeater.Layout>
+
+                <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="desktop:CompletedAction">
+                            <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
+                                <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
+                                    <TextBlock.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                        </Transitions>
+                                    </TextBlock.Transitions>
+                                    <TextBlock.Styles>
+                                        <Style Selector="TextBlock">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
+                                                    <KeyFrame Cue="0%">
+                                                        <Setter Property="Opacity" Value="1.0" />
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="100%">
+                                                        <Setter Property="Opacity" Value="0.0" />
+                                                    </KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </TextBlock.Styles>
+                                </TextBlock>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <avalonia:MaterialIcon
+                    Kind="ChevronRight"
+                    Foreground="White"
+                    Opacity="0"
+                    Width="60" Height="60"
+                    Name="PART_Icon" />
+                <ripple:RippleEffect Name="PART_Ripple"
+                                     IsHitTestVisible="False"
+                                     RippleFill="Red"
+                                     RippleOpacity="0.3" />
+
+                <DockPanel VerticalAlignment="Center" Margin="0 100 0 0">
+
+                    <ItemsRepeater ItemsSource="{Binding Discovery.ConnectedSatellites}"
+                                   DockPanel.Dock="Bottom">
+                        <ItemsRepeater.Layout>
                             <UniformGridLayout ItemsJustification="SpaceAround"
                                                MaximumRowsOrColumns="1"
-                                               MinRowSpacing="6"/>
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate>
-                            <Border CornerRadius="99" Background="#383838" HorizontalAlignment="Center">
-                                <DockPanel Margin="4 2 12 2">
-                                    <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12" Margin="6" />
-                                    <TextBlock FontSize="14" Foreground="White" Text="{Binding}"
-                                               VerticalAlignment="Center" />
-                                </DockPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
+                                               MinRowSpacing="6" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="99" Background="#383838" HorizontalAlignment="Center">
+                                    <DockPanel Margin="4 2 12 2">
+                                        <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12"
+                                                 Margin="6" />
+                                        <TextBlock FontSize="14" Foreground="White" Text="{Binding}"
+                                                   VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
 
-                <Grid>
-                    <TextBlock
-                        FontSize="22"
-                        Margin="0 10"
-                        Text="Connected"
-                        HorizontalAlignment="Center"
-                        IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayNotEmptyVisibilityConverter}}" />
+                    <Grid>
+                        <TextBlock
+                            FontSize="22"
+                            Margin="0 10"
+                            Text="Connected"
+                            HorizontalAlignment="Center"
+                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayNotEmptyVisibilityConverter}}" />
 
-                    <TextBlock
-                        FontSize="22"
-                        Margin="0 10"
-                        Text="Disconnected"
-                        HorizontalAlignment="Center"
-                        IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayIsEmptyVisibilityConverter}}" />
-                </Grid>
+                        <TextBlock
+                            FontSize="22"
+                            Margin="0 10"
+                            Text="Disconnected"
+                            HorizontalAlignment="Center"
+                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayIsEmptyVisibilityConverter}}" />
+                    </Grid>
 
-            </DockPanel>
-        </Grid>
-    </Border>
+                </DockPanel>
+
+
+            </Grid>
+        </Border>
+
+        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Click="CloseButtonClicked">
+            <avalonia:MaterialIcon Kind="Times" />
+        </Button>
+        
+    </Grid>
+
 </Window>
