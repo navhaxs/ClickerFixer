@@ -24,6 +24,8 @@
                       ToolTipText="Presentation Clicker Remote">
                 <TrayIcon.Menu>
                     <NativeMenu>
+                        <NativeMenuItem Header="Presentation Clicker App" IsEnabled="False" />
+                        <NativeMenuItem Header="Open Status Monitor" Click="TrayIcon_OnClicked" />
                         <NativeMenuItem Header="Exit" Click="NativeMenuItem_Exit_OnClick" />
                     </NativeMenu>
                 </TrayIcon.Menu>

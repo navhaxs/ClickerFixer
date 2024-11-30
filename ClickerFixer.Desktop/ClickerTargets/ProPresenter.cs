@@ -150,48 +150,50 @@ namespace ClickerFixer.Desktop.ClickerTargets
             using (var client = new WebsocketClient(url))
             {
                 client.ReconnectTimeout = new TimeSpan?(TimeSpan.FromSeconds(15.0));
-                client.ReconnectionHappened.Subscribe<ReconnectionInfo>((Action<ReconnectionInfo>) (info =>
+                client.ReconnectionHappened.Subscribe<ReconnectionInfo>((Action<ReconnectionInfo>)(info =>
                 {
-                  Console.WriteLine("Reconnection happened, type: " + info.Type.ToString());
-                  client.Send(JsonSerializer.Serialize<Dictionary<string, object>>(new Dictionary<string, object>()
-                  {
+                    Console.WriteLine("Reconnection happened, type: " + info.Type.ToString());
+                    client.Send(JsonSerializer.Serialize<Dictionary<string, object>>(new Dictionary<string, object>()
                     {
-                      "action",
-                      (object) "authenticate"
-                    },
-                    {
-                      "protocol",
-                      (object) "701"
-                    },
-                    {
-                      "password",
-                      (object) Global.Config.TargetsConfig.ProPresenterConfig.Password
-                    }
-                  }));
+                        {
+                            "action",
+                            (object)"authenticate"
+                        },
+                        {
+                            "protocol",
+                            (object)"701"
+                        },
+                        {
+                            "password",
+                            (object)Global.Config.TargetsConfig.ProPresenterConfig.Password
+                        }
+                    }));
                 }));
-                client.MessageReceived.Subscribe<ResponseMessage>((Action<ResponseMessage>) (msg => Console.WriteLine("[ProPresenter] Message received: " + msg?.ToString())));
+                client.MessageReceived.Subscribe<ResponseMessage>((Action<ResponseMessage>)(msg =>
+                    Console.WriteLine("[ProPresenter] Message received: " + msg?.ToString())));
                 client.Start();
-                CancellationToken token = this._cancelSource.Token;
+                var token = _cancelSource.Token;
                 while (!token.IsCancellationRequested)
                 {
-                  string message = (string) null;
-                  lock (this._locker)
-                  {
-                    if (this._tasks.Count > 0)
+                    string message = (string)null;
+                    lock (this._locker)
                     {
-                      message = this._tasks.Dequeue();
-                      if (message == null)
-                        break;
+                        if (this._tasks.Count > 0)
+                        {
+                            message = this._tasks.Dequeue();
+                            if (message == null)
+                                break;
+                        }
                     }
-                  }
-                  if (message != null)
-                  {
-                    if (!client.IsRunning)
-                      client.Start();
-                    client.Send(message);
-                  }
-                  else
-                    this._wh.WaitOne();
+
+                    if (message != null)
+                    {
+                        if (!client.IsRunning)
+                            client.Start();
+                        client.Send(message);
+                    }
+                    else
+                        this._wh.WaitOne();
                 }
             }
         }

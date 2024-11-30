@@ -5,7 +5,7 @@ using Websocket.Client;
 
 namespace ClickerFixer.Desktop.Services;
 
-internal class MyWsClient
+public class MyWsClient : IDisposable
 {
 	public static WebsocketClient client;
 
@@ -14,6 +14,9 @@ internal class MyWsClient
 	
 	public delegate void DisconnectHandler(object sender);
 	public event DisconnectHandler OnDisconnect;
+	
+	public delegate void ReconnectHandler(object sender);
+	public event ReconnectHandler OnReconnect;
 
 	private void UpdateStatus(CompletedAction msg)
 	{
@@ -23,12 +26,12 @@ internal class MyWsClient
 		OnTrigger(this, msg);
 	}
 
-	private HandleClickEventService test;
+	private HandleClickEventService handler;
 	
 	public MyWsClient(string serverIp, int port)
 	{
 		client = new WebsocketClient(new Uri($"ws://{serverIp}:{port}"));
-		test = new HandleClickEventService();
+		handler = new HandleClickEventService();
 
 		client.MessageReceived.Subscribe(ClientOnMessageReceived);
 		client.DisconnectionHappened.Subscribe((e) =>
@@ -36,15 +39,29 @@ internal class MyWsClient
 			if (OnDisconnect == null) return;
 			OnDisconnect(this);
 		});
+		client.ReconnectionHappened.Subscribe((e) =>
+		{
+			if (OnReconnect == null) return;
+			OnReconnect(this);
+		});
 		client.Start();
+	}
+
+	public void Reconnect()
+	{
+		client.Reconnect();
 	}
 
 	private void ClientOnMessageReceived(ResponseMessage e)
 	{
 		var msg = JsonSerializer.Deserialize<KeyPressEventMessage>(e.Text);
 		Console.WriteLine("MessageReceived: " + client.Url + " " + msg);
-		var completedAction = test.OnKeyReceived(msg);
+		var completedAction = handler.OnKeyReceived(msg);
 		UpdateStatus(completedAction);
 	}
 
+	public void Dispose()
+	{
+		handler.Dispose();
+	}
 }

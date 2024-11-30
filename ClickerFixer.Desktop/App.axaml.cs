@@ -30,7 +30,6 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    public Func<TrayIcon, ITrayIconImpl> GetMyProperty;
     MainViewModel vm;
 
     private void TrayIcon_OnClicked(object? sender, EventArgs e)
@@ -51,6 +50,8 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.MainWindow?.Close();
+            vm.Dispose();
             desktop.Shutdown();
         }
     }

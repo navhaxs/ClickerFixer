@@ -17,7 +17,7 @@ using WindowsInput;
 #nullable enable
 namespace ClickerFixer.Desktop.Services
 {
-    internal class HandleClickEventService
+    internal class HandleClickEventService : IDisposable
     {
         private List<IClickerTarget> _targets = new()
         {
@@ -58,6 +58,14 @@ namespace ClickerFixer.Desktop.Services
             var x = new CompletedAction { Index = i++, Target = name, KeyCode = e.KeyCode, Action = action };
             Console.WriteLine(x);
             return x;
+        }
+
+        public void Dispose()
+        {
+            foreach (var clickerTarget in _targets)
+            {
+                clickerTarget.Dispose();
+            }
         }
     }
 }

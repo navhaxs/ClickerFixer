@@ -1,30 +1,32 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading;
-using System.Threading.Tasks;
-using Avalonia.Collections;
 using Avalonia.Threading;
 using Makaretu.Dns;
 using ReactiveUI;
 
 namespace ClickerFixer.Desktop.Services;
 
-public class Discovery : ReactiveObject
+public class Discovery : ReactiveObject, IDisposable
 {
     public delegate void StatusUpdateHandler(object sender, CompletedAction msg);
 
     public event StatusUpdateHandler OnTrigger;
 
     private ObservableCollection<IPAddress> _connectedSatellites = new();
-    public ObservableCollection<IPAddress> ConnectedSatellites { get => _connectedSatellites; set => this.RaiseAndSetIfChanged(ref _connectedSatellites, value); }
-    
-    private String _test = "";
-    public String Test { get => _test; set => this.RaiseAndSetIfChanged(ref _test, value); }
-    
+
+    public ObservableCollection<IPAddress> ConnectedSatellites
+    {
+        get => _connectedSatellites;
+        set => this.RaiseAndSetIfChanged(ref _connectedSatellites, value);
+    }
+
+    public Dictionary<IPAddress, MyWsClient> wsClientMap = new();
+
     private ServiceDiscovery sd = new();
 
     private Action triggerQuery;
@@ -53,23 +55,23 @@ public class Discovery : ReactiveObject
                 if (ConnectedSatellites.FirstOrDefault(i => i.ToString().Equals(ipAddress.ToString())) != null)
                     return;
 
-                var wsClient = new MyWsClient(ipAddress.ToString(), port);
-                wsClient.OnTrigger += (sender, msg) => { OnTrigger?.Invoke(this, msg); };
-                wsClient.OnDisconnect += (sender) =>
+                if (wsClientMap.ContainsKey(ipAddress))
                 {
-                    ConnectedSatellites.Remove(ipAddress);
-                    this.RaisePropertyChanged(nameof(ConnectedSatellites));
-                };
+                    wsClientMap[ipAddress].Reconnect();
+                }
+                else
+                {
+                    var newInstance = new MyWsClient(ipAddress.ToString(), port);
+                    newInstance.OnTrigger += (sender, msg) => { OnTrigger?.Invoke(this, msg); };
+                    newInstance.OnDisconnect += (sender) => OnWsClientOnOnDisconnect(sender, ipAddress);
+                    newInstance.OnReconnect += (sender) => OnWsClientOnReconnect(sender, ipAddress);
+                    wsClientMap.Add(ipAddress, newInstance);
+                }
 
                 ConnectedSatellites.Add(ipAddress);
-                Test = ConnectedSatellites.Count.ToString();
             }
-            
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                this.RaisePropertyChanged(nameof(ConnectedSatellites));
-            });
 
+            Dispatcher.UIThread.InvokeAsync(() => { this.RaisePropertyChanged(nameof(ConnectedSatellites)); });
         });
 
         Action a = () =>
@@ -77,13 +79,39 @@ public class Discovery : ReactiveObject
             // This was successfully debounced...
             sd.QueryServiceInstances("_clicker._tcp");
         };
-        
+
         triggerQuery = a.Debounce();
-        
+
         NetworkChange.NetworkAvailabilityChanged += (sender, e) => AvailabilityChangedCallback(sender, e);
         NetworkChange.NetworkAddressChanged += (sender, e) => AddressChangedCallback(sender, e);
     }
-    
+
+    void OnWsClientOnOnDisconnect(object sender, IPAddress ipAddress)
+    {
+        lock (_lock)
+        {
+            if (ConnectedSatellites.Contains(ipAddress))
+            {
+                ConnectedSatellites.Remove(ipAddress);
+            }
+
+            this.RaisePropertyChanged(nameof(ConnectedSatellites));
+        }
+    }
+
+    void OnWsClientOnReconnect(object sender, IPAddress ipAddress)
+    {
+        lock (_lock)
+        {
+            if (!ConnectedSatellites.Contains(ipAddress))
+            {
+                ConnectedSatellites.Add(ipAddress);
+            }
+
+            this.RaisePropertyChanged(nameof(ConnectedSatellites));
+        }
+    }
+
     private void AvailabilityChangedCallback(object sender, NetworkAvailabilityEventArgs e)
     {
         if (e.IsAvailable)
@@ -98,16 +126,31 @@ public class Discovery : ReactiveObject
         triggerQuery();
     }
 
+    private PeriodicTimer timer;
+    private CancellationTokenSource cts = new();
+
     public async void Start()
     {
         triggerQuery();
 
-        var timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
 
-        while (await timer.WaitForNextTickAsync())
+        while (!cts.Token.IsCancellationRequested && await timer.WaitForNextTickAsync())
         {
             Console.WriteLine("tick");
             triggerQuery();
         }
+    }
+
+    public void Dispose()
+    {
+        foreach (var (k, v) in wsClientMap)
+        {
+            v.Dispose();
+        }
+        cts.CancelAsync();
+        sd.Dispose();
+        timer.Dispose();
+        cts.Dispose();
     }
 }
