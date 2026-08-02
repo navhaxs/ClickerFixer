@@ -16,6 +16,7 @@ namespace ClickerFixer.Satellite
             Global.Init();
             new MyServiceAdvertisement();
             new MyWebServer();
+            new MyLogServer(Global.ServerConfig.LogPort);
             var myEvdevListener = new MyEvdevListener();
 
             // Register whatever's already plugged in. Without this, a cold boot happens to
