@@ -1,0 +1,5 @@
+# Copy this file to deploy.config.ps1 (same directory) and fill in your
+# Pi's real address. deploy.config.ps1 is gitignored - it never gets
+# committed, so your Pi's IP never ends up in this (public) repo.
+
+$PiHost = "pi@YOUR_PI_IP"
