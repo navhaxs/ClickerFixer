@@ -35,6 +35,25 @@ public class MyLogServerTests
 	}
 
 	[Fact]
+	public async Task Logs_LinesQueryParam_IsPassedToJournalctlRunner()
+	{
+		int port = GetFreeTcpPort();
+		int? receivedLines = null;
+		using var server = new TestServer(new MyLogServer("127.0.0.1", (ushort)port,
+			lines =>
+			{
+				receivedLines = lines;
+				return (true, "ok");
+			}));
+
+		using var client = new HttpClient();
+		var response = await client.GetAsync($"http://127.0.0.1:{port}/logs?lines=50");
+
+		Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+		Assert.Equal(50, receivedLines);
+	}
+
+	[Fact]
 	public async Task Logs_FailedJournalctl_Returns500WithErrorBody()
 	{
 		int port = GetFreeTcpPort();
@@ -60,6 +79,31 @@ public class MyLogServerTests
 		var response = await client.GetAsync($"http://127.0.0.1:{port}/nope");
 
 		Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+	}
+
+	[Fact]
+	public void Constructor_PortAlreadyInUse_DoesNotThrow()
+	{
+		int port = GetFreeTcpPort();
+		MyLogServer? first = null;
+		MyLogServer? second = null;
+		try
+		{
+			first = new MyLogServer("127.0.0.1", (ushort)port, _ => (true, "unused"));
+
+			// Second server bound to the identical host/port: HttpListener.Start() would
+			// throw here (address already in use). The constructor must catch that and
+			// disable just the log endpoint instead of letting the exception propagate.
+			var ex = Record.Exception(() =>
+				second = new MyLogServer("127.0.0.1", (ushort)port, _ => (true, "unused")));
+
+			Assert.Null(ex);
+		}
+		finally
+		{
+			first?.Stop();
+			second?.Stop();
+		}
 	}
 
 	[SkippableFact]

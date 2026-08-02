@@ -16,7 +16,6 @@ namespace ClickerFixer.Satellite
             Global.Init();
             new MyServiceAdvertisement();
             new MyWebServer();
-            new MyLogServer(Global.ServerConfig.LogPort);
             var myEvdevListener = new MyEvdevListener();
 
             // Register whatever's already plugged in. Without this, a cold boot happens to
@@ -26,6 +25,12 @@ namespace ClickerFixer.Satellite
             myEvdevListener.ScanDeviceChanges();
 
             SdNotify.Ready();
+
+            // Diagnostics-only listener: constructed after Ready() so a bind failure here
+            // (e.g. LogPort collision) can never sit on the critical startup path even if
+            // some other startup failure mode is found later. MyLogServer itself guards its
+            // own HttpListener.Start() and just disables the endpoint on failure.
+            new MyLogServer(Global.ServerConfig.LogPort);
 
             var watchdogTimer = new System.Threading.Timer(_ =>
             {

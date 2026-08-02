@@ -31,8 +31,15 @@ internal class MyLogServer
 		_runJournalctl = runJournalctl;
 		_listener = new HttpListener();
 		_listener.Prefixes.Add($"http://{host}:{port}/");
-		_listener.Start();
-		_ = Task.Run(AcceptLoop);
+		try
+		{
+			_listener.Start();
+			_ = Task.Run(AcceptLoop);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"[MyLogServer] failed to start on {host}:{port}, log endpoint disabled: {ex}");
+		}
 	}
 
 	internal void Stop()
@@ -44,23 +51,33 @@ internal class MyLogServer
 	{
 		while (_listener.IsListening)
 		{
-			HttpListenerContext ctx;
 			try
 			{
-				ctx = await _listener.GetContextAsync();
-			}
-			catch (Exception) when (!_listener.IsListening)
-			{
-				break;
+				HttpListenerContext ctx;
+				try
+				{
+					ctx = await _listener.GetContextAsync();
+				}
+				catch (Exception) when (!_listener.IsListening)
+				{
+					break;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[MyLogServer] accept failed: {ex}");
+					await Task.Delay(1000);
+					continue;
+				}
+
+				_ = Task.Run(() => HandleRequest(ctx));
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"[MyLogServer] accept failed: {ex}");
-				await Task.Delay(1000);
-				continue;
+				// Nothing above this point should be able to throw uncaught, but this is the
+				// endpoint's whole accept loop: if anything unexpected ever does, log and keep
+				// looping rather than let the loop (and the endpoint) die silently forever.
+				Console.WriteLine($"[MyLogServer] accept loop iteration failed: {ex}");
 			}
-
-			_ = Task.Run(() => HandleRequest(ctx));
 		}
 	}
 
@@ -95,7 +112,14 @@ internal class MyLogServer
 		}
 		finally
 		{
-			ctx.Response.Close();
+			try
+			{
+				ctx.Response.Close();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[MyLogServer] response close failed: {ex}");
+			}
 		}
 	}
 
@@ -132,9 +156,29 @@ internal class MyLogServer
 			};
 
 			process.Start();
-			string stdout = process.StandardOutput.ReadToEnd();
-			string stderr = process.StandardError.ReadToEnd();
-			process.WaitForExit();
+
+			// Read both streams concurrently rather than sequentially: reading stdout to
+			// completion before starting on stderr risks a deadlock if the child fills the
+			// stderr pipe buffer while we're still blocked reading stdout.
+			Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+			Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+			Task.WhenAll(stdoutTask, stderrTask).GetAwaiter().GetResult();
+			string stdout = stdoutTask.Result;
+			string stderr = stderrTask.Result;
+
+			if (!process.WaitForExit(TimeSpan.FromSeconds(10)))
+			{
+				try
+				{
+					process.Kill(entireProcessTree: true);
+				}
+				catch (Exception killEx)
+				{
+					Console.WriteLine($"[MyLogServer] failed to kill hung journalctl: {killEx}");
+				}
+
+				return (false, "journalctl timed out after 10s and was killed");
+			}
 
 			if (process.ExitCode != 0)
 				return (false, $"journalctl exited with code {process.ExitCode}: {stderr}");
