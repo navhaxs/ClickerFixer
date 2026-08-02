@@ -1,3 +1,5 @@
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text.Json;
 using ClickerFixer.Data;
 using ClickerFixer.Satellite.Services;
@@ -10,6 +12,7 @@ namespace ClickerFixer.Satellite
         private static void Main(string[] args)
         {
             Console.WriteLine("Starting Satellite App");
+            LogIpAddresses();
             Global.Init();
             new MyServiceAdvertisement();
             new MyWebServer();
@@ -120,6 +123,30 @@ namespace ClickerFixer.Satellite
             }
 
             watchdogTimer.Dispose();
+        }
+
+        private static void LogIpAddresses()
+        {
+            try
+            {
+                var addresses = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(nic => nic.OperationalStatus == OperationalStatus.Up
+                                  && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    .SelectMany(nic => nic.GetIPProperties().UnicastAddresses
+                        .Where(ua => (ua.Address.AddressFamily == AddressFamily.InterNetwork
+                                      || ua.Address.AddressFamily == AddressFamily.InterNetworkV6)
+                                     && !ua.Address.IsIPv6LinkLocal)
+                        .Select(ua => $"{nic.Name}: {ua.Address}"))
+                    .ToList();
+
+                Console.WriteLine(addresses.Count > 0
+                    ? "IP address(es): " + string.Join(", ", addresses)
+                    : "IP address(es): none found (no active non-loopback network interface)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to enumerate IP addresses: {ex}");
+            }
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
