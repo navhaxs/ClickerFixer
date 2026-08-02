@@ -9,3 +9,4 @@ riderModule.iml
 /dist/
 scripts/deploy.config.ps1
 app.yml
+.superpowers/
