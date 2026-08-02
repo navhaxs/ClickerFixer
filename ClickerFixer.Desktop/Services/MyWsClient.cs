@@ -30,7 +30,7 @@ public class MyWsClient : IDisposable
 	
 	public MyWsClient(string serverIp, int port)
 	{
-		client = new WebsocketClient(new Uri($"ws://{serverIp}:{port}"));
+		client = WebsocketClientFactory.Create(serverIp, port);
 		handler = new HandleClickEventService();
 
 		client.MessageReceived.Subscribe(ClientOnMessageReceived);
