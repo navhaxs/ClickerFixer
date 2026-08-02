@@ -27,7 +27,7 @@ internal static class SdNotify
         try
         {
             using var socket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
-            var endpoint = new UnixDomainSocketEndPoint(socketPath);
+            var endpoint = new UnixDomainSocketEndPoint(ResolveSocketPath(socketPath));
             socket.Connect(endpoint);
             socket.Send(Encoding.ASCII.GetBytes(state));
         }
@@ -35,5 +35,21 @@ internal static class SdNotify
         {
             Console.WriteLine($"[sd_notify] failed to send '{state}': {ex}");
         }
+    }
+
+    /// <summary>
+    /// Per sd_notify(3), $NOTIFY_SOCKET can be either an absolute filesystem path or an
+    /// abstract-namespace socket path prefixed with '@' — the reference implementation
+    /// translates that leading '@' into a leading NUL byte before handing it to the
+    /// kernel. <see cref="UnixDomainSocketEndPoint"/> does not understand the '@'
+    /// convention itself (it only recognizes a literal leading NUL), so without this
+    /// translation, a host that hands out an abstract-namespace NOTIFY_SOCKET would make
+    /// every Connect() throw, silently swallowing READY=1/WATCHDOG=1 forever.
+    /// </summary>
+    internal static string ResolveSocketPath(string socketPath)
+    {
+        if (socketPath.Length > 0 && socketPath[0] == '@')
+            return "\0" + socketPath.Substring(1);
+        return socketPath;
     }
 }
