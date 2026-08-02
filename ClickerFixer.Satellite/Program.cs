@@ -14,7 +14,17 @@ namespace ClickerFixer.Satellite
             new MyServiceAdvertisement();
             new MyWebServer();
             var myEvdevListener = new MyEvdevListener();
-            
+
+            SdNotify.Ready();
+
+            var watchdogTimer = new System.Threading.Timer(_ =>
+            {
+                if (myEvdevListener.IsHealthy)
+                    SdNotify.Watchdog();
+                else
+                    Console.WriteLine("[watchdog] evdev listener unhealthy, withholding watchdog ping");
+            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             
@@ -91,6 +101,8 @@ namespace ClickerFixer.Satellite
                     }
                 }
             }
+
+            watchdogTimer.Dispose();
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
