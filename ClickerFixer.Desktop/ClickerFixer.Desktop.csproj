@@ -44,4 +44,8 @@
       <None Remove="Resources\tray_default.png" />
       <AvaloniaResource Include="Resources\tray_default.png" />
     </ItemGroup>
+
+    <ItemGroup>
+      <InternalsVisibleTo Include="ClickerFixer.Desktop.Tests" />
+    </ItemGroup>
 </Project>

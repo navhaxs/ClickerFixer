@@ -3,7 +3,7 @@ using Websocket.Client;
 
 namespace ClickerFixer.Desktop.Services;
 
-public static class WebsocketClientFactory
+internal static class WebsocketClientFactory
 {
     /// <summary>
     /// Default well above Websocket.Client's built-in ~1 minute
