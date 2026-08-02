@@ -81,7 +81,15 @@ public class Discovery : ReactiveObject, IDisposable
             sd.QueryServiceInstances("_clicker._tcp");
         };
 
-        triggerQuery = a.Debounce();
+        // Desktop is built as a WinExe (see ClickerFixer.Desktop.csproj) which has no
+        // attached console, so Debounce()'s default onError (Console.WriteLine) would
+        // write to nowhere and debounced-action failures here would go right back to
+        // vanishing silently — defeating the whole point of Task 1's exception-safe
+        // Debounce(). Debug.WriteLine is visible in an attached debugger, which is the
+        // minimal fix; there's no existing app-wide logging sink in this project to hook
+        // into instead (the rest of the codebase uses Console.WriteLine too, which has
+        // the same blind spot, but that's out of scope here).
+        triggerQuery = a.Debounce(onError: ex => System.Diagnostics.Debug.WriteLine($"[Discovery] debounced query failed: {ex}"));
 
         NetworkChange.NetworkAvailabilityChanged += (sender, e) => AvailabilityChangedCallback(sender, e);
         NetworkChange.NetworkAddressChanged += (sender, e) => AddressChangedCallback(sender, e);
