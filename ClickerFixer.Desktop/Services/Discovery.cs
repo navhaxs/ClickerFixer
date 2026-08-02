@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using ClickerFixer.Data;
 using Makaretu.Dns;
 using ReactiveUI;
+using Serilog;
 
 namespace ClickerFixer.Desktop.Services;
 
@@ -58,10 +59,12 @@ public class Discovery : ReactiveObject, IDisposable
 
                 if (wsClientMap.ContainsKey(ipAddress))
                 {
+                    Log.Information("Satellite {IpAddress} rediscovered, reconnecting", ipAddress);
                     wsClientMap[ipAddress].Reconnect();
                 }
                 else
                 {
+                    Log.Information("Satellite {IpAddress}:{Port} discovered", ipAddress, port);
                     var newInstance = new MyWsClient(ipAddress.ToString(), port);
                     newInstance.OnTrigger += (sender, msg) => { OnTrigger?.Invoke(this, msg); };
                     newInstance.OnDisconnect += (sender) => OnWsClientOnOnDisconnect(sender, ipAddress);
@@ -81,15 +84,7 @@ public class Discovery : ReactiveObject, IDisposable
             sd.QueryServiceInstances("_clicker._tcp");
         };
 
-        // Desktop is built as a WinExe (see ClickerFixer.Desktop.csproj) which has no
-        // attached console, so Debounce()'s default onError (Console.WriteLine) would
-        // write to nowhere and debounced-action failures here would go right back to
-        // vanishing silently — defeating the whole point of Task 1's exception-safe
-        // Debounce(). Debug.WriteLine is visible in an attached debugger, which is the
-        // minimal fix; there's no existing app-wide logging sink in this project to hook
-        // into instead (the rest of the codebase uses Console.WriteLine too, which has
-        // the same blind spot, but that's out of scope here).
-        triggerQuery = a.Debounce(onError: ex => System.Diagnostics.Debug.WriteLine($"[Discovery] debounced query failed: {ex}"));
+        triggerQuery = a.Debounce(onError: ex => Log.Warning(ex, "Debounced mDNS query failed"));
 
         NetworkChange.NetworkAvailabilityChanged += (sender, e) => AvailabilityChangedCallback(sender, e);
         NetworkChange.NetworkAddressChanged += (sender, e) => AddressChangedCallback(sender, e);
@@ -104,6 +99,7 @@ public class Discovery : ReactiveObject, IDisposable
                 ConnectedSatellites.Remove(ipAddress);
             }
 
+            Log.Warning("Satellite {IpAddress} disconnected", ipAddress);
             this.RaisePropertyChanged(nameof(ConnectedSatellites));
         }
     }
@@ -116,6 +112,8 @@ public class Discovery : ReactiveObject, IDisposable
             {
                 ConnectedSatellites.Add(ipAddress);
             }
+
+            Log.Information("Satellite {IpAddress} reconnected", ipAddress);
 
             this.RaisePropertyChanged(nameof(ConnectedSatellites));
         }
@@ -146,7 +144,7 @@ public class Discovery : ReactiveObject, IDisposable
 
         while (!cts.Token.IsCancellationRequested && await timer.WaitForNextTickAsync())
         {
-            Console.WriteLine("tick");
+            Log.Debug("Discovery tick");
             triggerQuery();
         }
     }

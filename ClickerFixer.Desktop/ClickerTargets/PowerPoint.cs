@@ -11,6 +11,7 @@ using System.Linq;
 using NetOffice;
 using NetOffice.PowerPointApi;
 using NetOffice.PowerPointApi.Enums;
+using Serilog;
 
 namespace ClickerFixer.Desktop.ClickerTargets
 {
@@ -25,7 +26,8 @@ namespace ClickerFixer.Desktop.ClickerTargets
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex.ToString());
+        // Expected whenever PowerPoint isn't running/active - not an error condition.
+        Log.Debug(ex, "PowerPoint.IsActive check failed");
       }
       return false;
     }
@@ -45,7 +47,7 @@ namespace ClickerFixer.Desktop.ClickerTargets
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex.Message);
+        Log.Warning(ex, "PowerPoint.SendNext failed");
       }
     }
 
@@ -60,7 +62,7 @@ namespace ClickerFixer.Desktop.ClickerTargets
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex.Message);
+        Log.Warning(ex, "PowerPoint.SendPrevious failed");
       }
     }
 

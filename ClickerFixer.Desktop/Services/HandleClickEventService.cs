@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using ClickerFixer.Desktop.ClickerTargets;
+using Serilog;
 using WindowsInput;
 
 #nullable enable
@@ -56,7 +57,7 @@ namespace ClickerFixer.Desktop.Services
             }
 
             var x = new CompletedAction { Index = i++, Target = name, KeyCode = e.KeyCode, Action = action };
-            Console.WriteLine(x);
+            Log.Information("Click handled: {@CompletedAction}", x);
             return x;
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json;
 using ClickerFixer.Data;
+using Serilog;
 using Websocket.Client;
 
 namespace ClickerFixer.Desktop.Services;
@@ -55,7 +56,7 @@ public class MyWsClient : IDisposable
 	private void ClientOnMessageReceived(ResponseMessage e)
 	{
 		var msg = JsonSerializer.Deserialize<KeyPressEventMessage>(e.Text);
-		Console.WriteLine("MessageReceived: " + client.Url + " " + msg);
+		Log.Debug("MessageReceived: {Url} {@Message}", client.Url, msg);
 		var completedAction = handler.OnKeyReceived(msg);
 		UpdateStatus(completedAction);
 	}

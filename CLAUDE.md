@@ -31,7 +31,8 @@ Redirects presentation-clicker button presses to whatever's actually presenting 
 
 ## Logs
 
-Satellite runs under systemd on the Pi: `journalctl --unit clicker.service`. All output is unstructured `Console.WriteLine` — no log levels, so `journalctl -p` filtering doesn't work. See findings doc for the logging-improvement backlog.
+- Satellite runs under systemd on the Pi: `journalctl --unit clicker.service`. All output is unstructured `Console.WriteLine` — no log levels, so `journalctl -p` filtering doesn't work. See findings doc for the logging-improvement backlog.
+- Desktop uses Serilog ([AppLogging.cs](ClickerFixer.Desktop/AppLogging.cs)), writing rolling daily files to `%LOCALAPPDATA%\ClickerFixer\logs\log-*.txt` (14-day retention), plus `WriteTo.Debug()` for an attached debugger. `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException` are wired to it, and `Program.Main` wraps `StartWithClassicDesktopLifetime` in try/catch — Avalonia doesn't swallow dispatcher exceptions, so that catch is the primary crash-capture point. Init happens before anything Avalonia-related runs.
 
 ## Build
 

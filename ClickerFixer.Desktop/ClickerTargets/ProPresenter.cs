@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using ClickerFixer.Interop;
+using Serilog;
 using Websocket.Client;
 
 // https://jeffmikels.github.io/ProPresenter-API/Pro7/
@@ -152,7 +153,7 @@ namespace ClickerFixer.Desktop.ClickerTargets
                 client.ReconnectTimeout = new TimeSpan?(TimeSpan.FromSeconds(15.0));
                 client.ReconnectionHappened.Subscribe<ReconnectionInfo>((Action<ReconnectionInfo>)(info =>
                 {
-                    Console.WriteLine("Reconnection happened, type: " + info.Type.ToString());
+                    Log.Information("ProPresenter reconnection happened, type: {ReconnectionType}", info.Type);
                     client.Send(JsonSerializer.Serialize<Dictionary<string, object>>(new Dictionary<string, object>()
                     {
                         {
@@ -170,7 +171,7 @@ namespace ClickerFixer.Desktop.ClickerTargets
                     }));
                 }));
                 client.MessageReceived.Subscribe<ResponseMessage>((Action<ResponseMessage>)(msg =>
-                    Console.WriteLine("[ProPresenter] Message received: " + msg?.ToString())));
+                    Log.Debug("ProPresenter message received: {@Message}", msg)));
                 client.Start();
                 var token = _cancelSource.Token;
                 while (!token.IsCancellationRequested)
