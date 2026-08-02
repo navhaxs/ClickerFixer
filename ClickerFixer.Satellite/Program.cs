@@ -92,21 +92,7 @@ namespace ClickerFixer.Satellite
                 }
             }
         }
-        
-        public static Action Debounce(this Action func, int milliseconds = 300)
-        {
-            var last = 0;
-            return () =>
-            {
-                var current = Interlocked.Increment(ref last);
-                Task.Delay(milliseconds).ContinueWith(task =>
-                {
-                    if (current == last) func();
-                    task.Dispose();
-                });
-            };
-        }
-        
+
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Console.WriteLine("CurrentDomain_UnhandledExceptionEventArgs. Please report this error. {ex}", e.ExceptionObject);

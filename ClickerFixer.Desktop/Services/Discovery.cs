@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading;
 using Avalonia.Threading;
+using ClickerFixer.Data;
 using Makaretu.Dns;
 using ReactiveUI;
 
