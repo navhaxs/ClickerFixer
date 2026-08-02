@@ -20,4 +20,8 @@
       <ProjectReference Include="..\Library\evdev-sharp-master\EvDevSharp\EvDevSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <InternalsVisibleTo Include="ClickerFixer.Satellite.Tests" />
+    </ItemGroup>
+
 </Project>
