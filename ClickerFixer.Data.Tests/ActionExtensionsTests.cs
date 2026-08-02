@@ -1,3 +1,4 @@
+using System.IO;
 using ClickerFixer.Data;
 
 namespace ClickerFixer.Data.Tests;
@@ -38,14 +39,28 @@ public class ActionExtensionsTests
     [Fact]
     public async Task Debounce_ExceptionWithNoErrorHandler_DoesNotThrowUnobserved()
     {
-        var debounced = ((Action)(() => throw new InvalidOperationException("boom"))).Debounce(milliseconds: 20);
+        var originalOut = Console.Out;
+        var capturedOutput = new StringWriter();
 
-        var ex = Record.Exception(() => debounced());
-        Assert.Null(ex); // debounce itself never throws synchronously
+        try
+        {
+            Console.SetOut(capturedOutput);
 
-        await Task.Delay(200);
-        // No assertion beyond "test process didn't crash" — this exercises the
-        // default onError path (Console.WriteLine) instead of an unobserved
-        // task exception reaching the finalizer thread.
+            var debounced = ((Action)(() => throw new InvalidOperationException("boom"))).Debounce(milliseconds: 20);
+
+            var ex = Record.Exception(() => debounced());
+            Assert.Null(ex); // debounce itself never throws synchronously
+
+            await Task.Delay(200);
+
+            // Assert the default error handler logged the exception to Console
+            var output = capturedOutput.ToString();
+            Assert.Contains("boom", output);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            capturedOutput.Dispose();
+        }
     }
 }
