@@ -19,10 +19,21 @@ namespace ClickerFixer.Satellite
 
             var watchdogTimer = new System.Threading.Timer(_ =>
             {
-                if (myEvdevListener.IsHealthy)
-                    SdNotify.Watchdog();
-                else
-                    Console.WriteLine("[watchdog] evdev listener unhealthy, withholding watchdog ping");
+                try
+                {
+                    if (myEvdevListener.IsHealthy)
+                        SdNotify.Watchdog();
+                    else
+                        Console.WriteLine("[watchdog] evdev listener unhealthy, withholding watchdog ping");
+                }
+                catch (Exception ex)
+                {
+                    // Timer callbacks run on the ThreadPool; an unhandled exception here
+                    // (including Console.WriteLine itself throwing IOException on a broken
+                    // pipe under journald) would terminate the process by default. Funnel
+                    // it into a visible log line instead of letting it escape.
+                    Console.WriteLine($"[watchdog] callback threw: {ex}");
+                }
             }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
