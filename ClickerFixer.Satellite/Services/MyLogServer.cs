@@ -56,6 +56,7 @@ internal class MyLogServer
 			catch (Exception ex)
 			{
 				Console.WriteLine($"[MyLogServer] accept failed: {ex}");
+				await Task.Delay(1000);
 				continue;
 			}
 
