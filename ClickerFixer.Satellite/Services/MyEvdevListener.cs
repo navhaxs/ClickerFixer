@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ClickerFixer.Data;
@@ -12,72 +9,102 @@ namespace ClickerFixer.Satellite.Services;
 
 internal class MyEvdevListener : IDisposable
 {
-    // private Task task;
     private static readonly object _lock = new();
-    
-    private List<EvDevDevice> activeDevices;
 
-    public MyEvdevListener()
+    private readonly IEvDevDeviceScanner _scanner;
+    private readonly TimeSpan _retryDelay;
+    private readonly int _maxAutoRetries;
+    private readonly List<IEvDevDeviceHandle> _activeDevices = new();
+
+    private int _consecutiveScanFailures;
+
+    /// <summary>True after the most recent scan completed without the enumeration itself throwing.</summary>
+    public bool IsHealthy { get; private set; } = true;
+
+    public int ActiveDeviceCount
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return;
-        }
+        get { lock (_lock) return _activeDevices.Count; }
+    }
 
-        activeDevices = new List<EvDevDevice>();
-        //ScanDeviceChanges();
-        // task = Task.Run(async delegate
-        // {
-        // 	while (true)
-        // 	{
-        // 		await Task.Delay(10000);
-        // 		scanDeviceChanges();
-        // 	}
-        // });
+    public MyEvdevListener() : this(new LinuxEvDevDeviceScanner())
+    {
+    }
+
+    internal MyEvdevListener(IEvDevDeviceScanner scanner, TimeSpan? retryDelay = null, int maxAutoRetries = 3)
+    {
+        _scanner = scanner;
+        _retryDelay = retryDelay ?? TimeSpan.FromMilliseconds(500);
+        _maxAutoRetries = maxAutoRetries;
     }
 
     public void ScanDeviceChanges()
     {
-        Console.WriteLine($"scan device changes START");
-        lock (_lock)
+        Console.WriteLine("[evdev] scan starting");
+
+        IReadOnlyList<IEvDevDeviceHandle> scanned;
+        try
         {
-            activeDevices.ForEach(delegate(EvDevDevice item)
+            scanned = _scanner.Scan();
+        }
+        catch (Exception ex)
+        {
+            _consecutiveScanFailures++;
+            IsHealthy = false;
+            lock (_lock)
             {
-                Console.WriteLine($"dropping {item.DevicePath} {item.UniqueId} {item.Id}");
-                Remove(item);
-            });
-
-            activeDevices.Clear();
-
-            var scanned = EvDevDevice.GetDevices();
-
-            foreach (var evDevDevice in scanned)
-            {
-                Console.WriteLine(evDevDevice.DevicePath);
+                Console.WriteLine(
+                    $"[evdev] scan failed ({_consecutiveScanFailures}/{_maxAutoRetries}), " +
+                    $"keeping {_activeDevices.Count} previously-active device(s) untouched: {ex}");
             }
 
-            foreach (var device in from d in EvDevDevice.GetDevices()
-                     orderby d.DevicePath
-                     select d)
-            {
-                Console.WriteLine($"added {device.DevicePath} {device.UniqueId} {device.Id}");
-                activeDevices.Add(device);
-                Register(device);
-            }
+            if (_consecutiveScanFailures <= _maxAutoRetries)
+                ScheduleRetry();
+
+            return;
         }
 
-        Console.WriteLine($"scan device changes END");
+        lock (_lock)
+        {
+            foreach (var old in _activeDevices)
+                Remove(old);
+            _activeDevices.Clear();
+
+            foreach (var device in scanned)
+            {
+                try
+                {
+                    Register(device);
+                    _activeDevices.Add(device);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[evdev] failed to register {device.DevicePath}, skipping it: {ex}");
+                }
+            }
+
+            Console.WriteLine($"[evdev] scan complete, {_activeDevices.Count} device(s) active");
+        }
+
+        _consecutiveScanFailures = 0;
+        IsHealthy = true;
     }
 
-    private void Register(EvDevDevice device)
+    private void ScheduleRetry()
     {
-        activeDevices.Add(device);
-        Console.WriteLine(device.Name ?? "");
-        Console.WriteLine(JsonSerializer.Serialize(device) ?? "");
+        Action retry = ScanDeviceChanges;
+        var debounced = retry.Debounce((int)_retryDelay.TotalMilliseconds,
+            ex => Console.WriteLine($"[evdev] retry scan threw: {ex}"));
+        debounced();
+    }
 
-        device.OnKeyEvent += delegate(object s, OnKeyEventArgs e)
+    private void Register(IEvDevDeviceHandle device)
+    {
+        Console.WriteLine($"[evdev] added {device.DevicePath}");
+
+        device.OnKeyEvent += delegate(object? s, OnKeyEventArgs e)
         {
-            if (e.Value == EvDevKeyValue.KeyDown) {
+            if (e.Value == EvDevKeyValue.KeyDown)
+            {
                 Console.WriteLine($"Button: {e.Key}\t{(int)e.Key}\tState: {e.Value}");
                 MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
                 {
@@ -88,25 +115,27 @@ internal class MyEvdevListener : IDisposable
         device.StartMonitoring();
     }
 
-    private void Remove(EvDevDevice device)
+    private void Remove(IEvDevDeviceHandle device)
     {
         try
         {
+            Console.WriteLine($"[evdev] dropping {device.DevicePath}");
+            device.StopMonitoring();
             device.Dispose();
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Console.WriteLine($"[evdev] error disposing {device.DevicePath}: {e}");
         }
     }
 
     public void Dispose()
     {
-        // task.Dispose();
-        activeDevices.ForEach(delegate(EvDevDevice device)
+        lock (_lock)
         {
-            device.StopMonitoring();
-            device.Dispose();
-        });
+            foreach (var device in _activeDevices)
+                Remove(device);
+            _activeDevices.Clear();
+        }
     }
 }
