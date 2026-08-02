@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using ClickerFixer.Desktop.Services;
 using Serilog;
 
 namespace ClickerFixer.Desktop;
@@ -30,6 +31,7 @@ internal static class AppLogging
                 retainedFileCountLimit: 14,
                 shared: true)
             .WriteTo.Debug()
+            .WriteTo.Sink(InMemoryLogSink.Instance)
             .CreateLogger();
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>

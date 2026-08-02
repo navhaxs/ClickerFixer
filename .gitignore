@@ -8,3 +8,4 @@ riderModule.iml
 *.user
 /dist/
 scripts/deploy.config.ps1
+app.yml

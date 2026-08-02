@@ -26,6 +26,7 @@
                     <NativeMenu>
                         <NativeMenuItem Header="Presentation Clicker App" IsEnabled="False" />
                         <NativeMenuItem Header="Open Status Monitor" Click="TrayIcon_OnClicked" />
+                        <NativeMenuItem Header="Show Logs" Click="ShowLogs_OnClick" />
                         <NativeMenuItem Header="Exit" Click="NativeMenuItem_Exit_OnClick" />
                     </NativeMenu>
                 </TrayIcon.Menu>

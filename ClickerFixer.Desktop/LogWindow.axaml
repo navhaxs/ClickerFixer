@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" Width="700" Height="450"
+        x:Class="ClickerFixer.Desktop.LogWindow"
+        Title="ClickerFixer - Logs"
+        ShowInTaskbar="True">
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel Orientation="Horizontal" Margin="8" Spacing="8" Grid.Row="0">
+            <Button Content="Copy All" Click="CopyAllButtonClicked" />
+            <Button Content="Clear" Click="ClearButtonClicked" />
+            <Button Content="Open Logs Folder" Click="OpenLogsFolderButtonClicked" />
+        </StackPanel>
+        <TextBox Name="LogTextBox"
+                 Grid.Row="1"
+                 Margin="8 0 8 8"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="NoWrap"
+                 FontFamily="Cascadia Mono,Consolas,Courier New,monospace"
+                 FontSize="12" />
+    </Grid>
+</Window>

@@ -46,6 +46,11 @@ public partial class App : Application
         }
     }
 
+    private void ShowLogs_OnClick(object? sender, EventArgs e)
+    {
+        LogWindow.ShowOrActivate();
+    }
+
     private void NativeMenuItem_Exit_OnClick(object? sender, EventArgs e)
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
