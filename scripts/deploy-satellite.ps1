@@ -50,11 +50,15 @@ dotnet publish $Project `
     -o $OutDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
 
+Write-Host "==> Stopping $Service (can't overwrite its running binary otherwise - ETXTBSY)"
+# Non-fatal: on a first-ever deploy the unit may not exist/be enabled yet.
+ssh $PiHost "sudo systemctl stop '$Service'" 2>&1 | Write-Host
+
 Write-Host "==> Copying to ${PiHost}:${RemoteDir}"
 # Copies publish output into RemoteDir. app.yml (the runtime config file
 # living only on the Pi) is never part of the publish output, so it is
 # never touched by this copy.
-ssh $PiHost "sudo mkdir -p '$RemoteDir' && sudo chown `$(whoami) '$RemoteDir'"
+ssh $PiHost "sudo mkdir -p '$RemoteDir' && sudo chown -R `$(whoami) '$RemoteDir'"
 if ($LASTEXITCODE -ne 0) { throw "ssh mkdir/chown failed with exit code $LASTEXITCODE" }
 
 # scp.exe doesn't glob-expand "*" itself on Windows (there's no shell doing
@@ -63,9 +67,9 @@ $publishedItems = (Get-ChildItem -Path $OutDir).FullName
 scp -r @publishedItems "${PiHost}:${RemoteDir}/"
 if ($LASTEXITCODE -ne 0) { throw "scp failed with exit code $LASTEXITCODE" }
 
-Write-Host "==> Restarting $Service"
-ssh $PiHost "sudo systemctl daemon-reload && sudo systemctl restart '$Service'"
-if ($LASTEXITCODE -ne 0) { throw "ssh restart failed with exit code $LASTEXITCODE" }
+Write-Host "==> Starting $Service"
+ssh $PiHost "sudo systemctl daemon-reload && sudo systemctl start '$Service'"
+if ($LASTEXITCODE -ne 0) { throw "ssh start failed with exit code $LASTEXITCODE" }
 
 Write-Host "==> Status"
 ssh $PiHost "sudo systemctl status '$Service' --no-pager -l"
