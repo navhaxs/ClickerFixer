@@ -6,6 +6,50 @@ namespace ClickerFixer.Satellite.Tests;
 public class MyEvdevListenerTests
 {
     [Fact]
+    public void IsHealthy_BeforeAnyScanHasRun_IsFalse()
+    {
+        // Regression test for the final-review finding: IsHealthy used to default to true
+        // before any scan ever ran, which masked a systemd-watchdog-restarted process that
+        // never gets a chance to scan (no USB hotplug event fires on restart) — it would
+        // report healthy forever despite monitoring zero devices.
+        var listener = new MyEvdevListener(new FakeDeviceScanner());
+
+        Assert.False(listener.IsHealthy);
+    }
+
+    [Fact]
+    public void ScanDeviceChanges_SuccessfulScanWithZeroDevices_IsNotHealthy()
+    {
+        // A scan that completes without throwing but registers no devices at all (e.g.
+        // every device failed Register() due to a permission-denied race, or there
+        // genuinely are none) must not be reported healthy — the watchdog should not keep
+        // being fed for a functionally dead listener.
+        var scanner = new FakeDeviceScanner();
+        // No devices enqueued: Scan() returns an empty (not throwing) list.
+
+        var listener = new MyEvdevListener(scanner);
+        listener.ScanDeviceChanges();
+
+        Assert.Equal(0, listener.ActiveDeviceCount);
+        Assert.False(listener.IsHealthy);
+    }
+
+    [Fact]
+    public void ScanDeviceChanges_AllDevicesFailToRegister_IsNotHealthy()
+    {
+        var scanner = new FakeDeviceScanner();
+        var bad1 = new FakeDeviceHandle { DevicePath = "/dev/input/event0", ThrowOnStartMonitoring = true };
+        var bad2 = new FakeDeviceHandle { DevicePath = "/dev/input/event1", ThrowOnStartMonitoring = true };
+        scanner.EnqueueDevices(bad1, bad2);
+
+        var listener = new MyEvdevListener(scanner);
+        listener.ScanDeviceChanges();
+
+        Assert.Equal(0, listener.ActiveDeviceCount);
+        Assert.False(listener.IsHealthy);
+    }
+
+    [Fact]
     public void ScanDeviceChanges_SuccessfulScan_RegistersAllDevices()
     {
         var scanner = new FakeDeviceScanner();

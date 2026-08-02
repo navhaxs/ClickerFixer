@@ -17,18 +17,25 @@ internal class MyEvdevListener : IDisposable
     private readonly List<IEvDevDeviceHandle> _activeDevices = new();
 
     private int _consecutiveScanFailures;
-    private bool _isHealthy = true;
+
+    // volatile: read by the watchdog timer thread without acquiring _lock, so a health
+    // check is never blocked behind an in-progress scan/teardown (which can hold the lock
+    // for seconds — see ScanDeviceChanges()/Remove()). A single bool read/write cannot
+    // tear, and nothing in this codebase reads IsHealthy and ActiveDeviceCount together as
+    // an atomic pair (Program.cs's watchdog callback only ever reads IsHealthy alone), so
+    // the small window where the two could be momentarily inconsistent across threads is
+    // harmless.
+    private volatile bool _isHealthy;
 
     /// <summary>
-    /// True after the most recent scan completed without the enumeration itself throwing.
-    /// Backed by <see cref="_isHealthy"/>, which is only ever read/written while holding
-    /// <see cref="_lock"/> — the same lock that guards <see cref="_activeDevices"/> — so a
-    /// caller never observes health/device-count values torn from two different scans.
+    /// True once a scan has completed (without the enumeration itself throwing) AND at
+    /// least one device came out of it registered. False before the first scan ever runs
+    /// (nothing has been verified working yet) and false if a scan "succeeds" but manages
+    /// to register zero devices (e.g. every device failed <see cref="Register"/>, such as
+    /// a permission-denied race) — a functionally dead listener should not keep the
+    /// watchdog fed.
     /// </summary>
-    public bool IsHealthy
-    {
-        get { lock (_lock) return _isHealthy; }
-    }
+    public bool IsHealthy => _isHealthy;
 
     public int ActiveDeviceCount
     {
@@ -99,7 +106,7 @@ internal class MyEvdevListener : IDisposable
             Console.WriteLine($"[evdev] scan complete, {_activeDevices.Count} device(s) active");
 
             _consecutiveScanFailures = 0;
-            _isHealthy = true;
+            _isHealthy = _activeDevices.Count > 0;
         }
     }
 
@@ -134,7 +141,12 @@ internal class MyEvdevListener : IDisposable
         try
         {
             Console.WriteLine($"[evdev] dropping {device.DevicePath}");
-            device.StopMonitoring();
+            // Dispose() already calls StopMonitoring() internally (see EvDevDevice.Dispose()
+            // in the vendored library). Calling it explicitly here first used to double the
+            // teardown cost: StopMonitoring() cancels the monitoring loop and Wait()s up to
+            // 1 second for it to unblock from a synchronous file read, so doing that twice
+            // per device (once here, once inside Dispose()) could hold this method's caller's
+            // lock for up to ~2 seconds per device instead of ~1.
             device.Dispose();
         }
         catch (Exception e)

@@ -15,6 +15,12 @@ namespace ClickerFixer.Satellite
             new MyWebServer();
             var myEvdevListener = new MyEvdevListener();
 
+            // Register whatever's already plugged in. Without this, a cold boot happens to
+            // work because real hotplug events fire during boot enumeration, but a systemd
+            // watchdog restart hours into uptime has no pending USB events, so the restarted
+            // process would come back up with zero registered devices and never recover.
+            myEvdevListener.ScanDeviceChanges();
+
             SdNotify.Ready();
 
             var watchdogTimer = new System.Threading.Timer(_ =>
