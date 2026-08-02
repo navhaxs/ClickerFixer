@@ -1,3 +1,4 @@
+using System.Threading;
 using ClickerFixer.Satellite.Services;
 
 namespace ClickerFixer.Satellite.Tests;
@@ -90,5 +91,66 @@ public class MyEvdevListenerTests
         Assert.False(listener.IsHealthy);
         // 1 initial call + at most 3 retries = 4, must not run away indefinitely
         Assert.True(scanner.ScanCallCount <= 4, $"expected <= 4 scan calls, got {scanner.ScanCallCount}");
+    }
+
+    [Fact]
+    public async Task ScanDeviceChanges_ConcurrentCalls_AreMutuallyExclusiveAndLeaveConsistentState()
+    {
+        // Regression test for the concurrency finding on the 2026-08-02 outage fix review:
+        // a real USB hotplug scan (debounced in Program.cs) and MyEvdevListener's own
+        // retry-after-failure scan (ScheduleRetry) run on independent Debounce() instances
+        // with no shared coordination, so nothing previously stopped two ScanDeviceChanges()
+        // calls from executing at once. If that happened, whichever thread reached the
+        // device-list swap second would tear down devices the other thread had just
+        // registered, and IsHealthy could reflect whichever scan finished last rather than
+        // the true current state.
+        //
+        // Each queued scan increments a shared counter on entry and decrements it on exit,
+        // both under its own lock, while sleeping briefly in between — if ScanDeviceChanges()
+        // ever let two scans run concurrently, this would observe a concurrency count > 1.
+        // Because production code now wraps the entire method (including the scanner.Scan()
+        // call) in one lock, this assertion is deterministic given the fix, not probabilistic.
+        var scanner = new FakeDeviceScanner();
+        var concurrencyGate = new object();
+        var concurrentScans = 0;
+        var maxObservedConcurrency = 0;
+
+        const int scanCount = 5;
+        for (var i = 0; i < scanCount; i++)
+        {
+            var index = i;
+            scanner.Enqueue(() =>
+            {
+                lock (concurrencyGate)
+                {
+                    concurrentScans++;
+                    maxObservedConcurrency = Math.Max(maxObservedConcurrency, concurrentScans);
+                }
+
+                Thread.Sleep(20); // simulate a slow scan so an unsynchronized overlap would be caught
+
+                lock (concurrencyGate)
+                {
+                    concurrentScans--;
+                }
+
+                return new IEvDevDeviceHandle[] { new FakeDeviceHandle { DevicePath = $"/dev/input/event{index}" } };
+            });
+        }
+
+        var listener = new MyEvdevListener(scanner);
+
+        var tasks = new Task[scanCount];
+        for (var i = 0; i < scanCount; i++)
+            tasks[i] = Task.Run(listener.ScanDeviceChanges);
+
+        await Task.WhenAll(tasks); // rethrows if any concurrent call threw
+
+        Assert.Equal(1, maxObservedConcurrency); // never more than one scan in flight at a time
+        Assert.Equal(scanCount, scanner.ScanCallCount);
+        // Whichever scan's result "won" the final swap, exactly one coherent scan's device(s)
+        // must remain — never a mix, and never zero from a corrupted concurrent clear.
+        Assert.Equal(1, listener.ActiveDeviceCount);
+        Assert.True(listener.IsHealthy);
     }
 }

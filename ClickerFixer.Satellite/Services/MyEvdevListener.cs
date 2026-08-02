@@ -17,9 +17,18 @@ internal class MyEvdevListener : IDisposable
     private readonly List<IEvDevDeviceHandle> _activeDevices = new();
 
     private int _consecutiveScanFailures;
+    private bool _isHealthy = true;
 
-    /// <summary>True after the most recent scan completed without the enumeration itself throwing.</summary>
-    public bool IsHealthy { get; private set; } = true;
+    /// <summary>
+    /// True after the most recent scan completed without the enumeration itself throwing.
+    /// Backed by <see cref="_isHealthy"/>, which is only ever read/written while holding
+    /// <see cref="_lock"/> — the same lock that guards <see cref="_activeDevices"/> — so a
+    /// caller never observes health/device-count values torn from two different scans.
+    /// </summary>
+    public bool IsHealthy
+    {
+        get { lock (_lock) return _isHealthy; }
+    }
 
     public int ActiveDeviceCount
     {
@@ -39,32 +48,37 @@ internal class MyEvdevListener : IDisposable
 
     public void ScanDeviceChanges()
     {
-        Console.WriteLine("[evdev] scan starting");
+        // The whole method runs under _lock — including the _scanner.Scan() call itself —
+        // so at most one scan is ever "in flight". Without this, a real USB hotplug scan
+        // (debounced in Program.cs) and MyEvdevListener's own retry-after-failure scan
+        // (ScheduleRetry) can run concurrently on different threadpool threads: whichever
+        // reaches the device-list swap second would tear down devices the other thread had
+        // just registered a moment earlier, and _isHealthy/_consecutiveScanFailures could
+        // end up reflecting whichever scan happened to finish last rather than the true
+        // current state — a narrower re-run of the original outage bug.
+        lock (_lock)
+        {
+            Console.WriteLine("[evdev] scan starting");
 
-        IReadOnlyList<IEvDevDeviceHandle> scanned;
-        try
-        {
-            scanned = _scanner.Scan();
-        }
-        catch (Exception ex)
-        {
-            _consecutiveScanFailures++;
-            IsHealthy = false;
-            lock (_lock)
+            IReadOnlyList<IEvDevDeviceHandle> scanned;
+            try
             {
+                scanned = _scanner.Scan();
+            }
+            catch (Exception ex)
+            {
+                _consecutiveScanFailures++;
+                _isHealthy = false;
                 Console.WriteLine(
                     $"[evdev] scan failed ({_consecutiveScanFailures}/{_maxAutoRetries}), " +
                     $"keeping {_activeDevices.Count} previously-active device(s) untouched: {ex}");
+
+                if (_consecutiveScanFailures <= _maxAutoRetries)
+                    ScheduleRetry();
+
+                return;
             }
 
-            if (_consecutiveScanFailures <= _maxAutoRetries)
-                ScheduleRetry();
-
-            return;
-        }
-
-        lock (_lock)
-        {
             foreach (var old in _activeDevices)
                 Remove(old);
             _activeDevices.Clear();
@@ -83,10 +97,10 @@ internal class MyEvdevListener : IDisposable
             }
 
             Console.WriteLine($"[evdev] scan complete, {_activeDevices.Count} device(s) active");
-        }
 
-        _consecutiveScanFailures = 0;
-        IsHealthy = true;
+            _consecutiveScanFailures = 0;
+            _isHealthy = true;
+        }
     }
 
     private void ScheduleRetry()
