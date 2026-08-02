@@ -45,6 +45,29 @@ namespace ClickerFixer.Satellite
                 }
             }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
+            // Safety net for a failure mode we have no visibility into: the vendored evdev
+            // monitoring loop (EvDevDevice.Monitoring.cs, not ours to edit) can have its
+            // background read thread die quietly on an IOException with nothing more than a
+            // Console.WriteLine — MyEvdevListener never finds out, since there's no public
+            // API on EvDevDevice to ask "is your monitoring task still alive?". In practice
+            // an unplugged device also fires a USB removal event (which triggers a real
+            // rescan), so this is a narrow edge case — but a periodic unconditional rescan
+            // bounds how long a silently-dead device can go unnoticed even without one.
+            // 5 minutes trades a small, infrequent registration-churn window (each device is
+            // briefly torn down and re-registered) for a bounded self-heal time.
+            var periodicRescanTimer = new System.Threading.Timer(_ =>
+            {
+                try
+                {
+                    Console.WriteLine("[evdev] periodic safety-net rescan");
+                    myEvdevListener.ScanDeviceChanges();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[periodic rescan] callback threw: {ex}");
+                }
+            }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             
@@ -123,6 +146,7 @@ namespace ClickerFixer.Satellite
             }
 
             watchdogTimer.Dispose();
+            periodicRescanTimer.Dispose();
         }
 
         private static void LogIpAddresses()

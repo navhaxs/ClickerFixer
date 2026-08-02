@@ -27,8 +27,9 @@ internal class MyWebServer
 			{
 				server.SendAsync(item.Guid, message);
 			}
-			catch
+			catch (Exception ex)
 			{
+				Console.WriteLine($"[MyWebServer] failed to send to client {item.Guid}: {ex}");
 			}
 		}
 	}

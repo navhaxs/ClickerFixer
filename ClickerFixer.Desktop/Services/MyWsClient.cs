@@ -8,7 +8,15 @@ namespace ClickerFixer.Desktop.Services;
 
 public class MyWsClient : IDisposable
 {
-	public static WebsocketClient client;
+	// Was `static` - since Discovery creates one MyWsClient per connected satellite, a
+	// static field meant every instance shared ONE underlying WebsocketClient: the second
+	// satellite's constructor silently overwrote the field, so Reconnect() and Dispose()
+	// on the FIRST satellite's MyWsClient would actually act on the SECOND satellite's
+	// socket instead (event subscriptions below were still bound to the correct object per
+	// Rx closure, so message delivery itself wasn't affected - but Reconnect(), Dispose(),
+	// and the Url logged in ClientOnMessageReceived all silently pointed at whichever
+	// satellite connected most recently).
+	private readonly WebsocketClient client;
 
 	public delegate void StatusUpdateHandler(object sender, CompletedAction msg);
 	public event StatusUpdateHandler OnTrigger;
@@ -64,5 +72,6 @@ public class MyWsClient : IDisposable
 	public void Dispose()
 	{
 		handler.Dispose();
+		client.Dispose();
 	}
 }

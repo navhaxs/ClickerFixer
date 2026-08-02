@@ -124,13 +124,26 @@ internal class MyEvdevListener : IDisposable
 
         device.OnKeyEvent += delegate(object? s, OnKeyEventArgs e)
         {
-            if (e.Value == EvDevKeyValue.KeyDown)
+            // The vendored monitoring loop (EvDevDevice.Monitoring.cs) invokes this handler
+            // directly inside its read loop with no try/catch of its own beyond
+            // FileNotFoundException/IOException around the whole loop. Any other exception
+            // escaping this handler would silently kill that device's monitoring Task for
+            // good — the exact failure shape ScanDeviceChanges() was hardened against, one
+            // layer deeper. Never let anything escape from here.
+            try
             {
-                Console.WriteLine($"Button: {e.Key}\t{(int)e.Key}\tState: {e.Value}");
-                MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
+                if (e.Value == EvDevKeyValue.KeyDown)
                 {
-                    KeyCode = LinuxToWindowsKeyCode.LinuxToWindows((int)e.Key)
-                }));
+                    Console.WriteLine($"Button: {e.Key}\t{(int)e.Key}\tState: {e.Value}");
+                    MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
+                    {
+                        KeyCode = LinuxToWindowsKeyCode.LinuxToWindows((int)e.Key)
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[evdev] OnKeyEvent handler threw for {device.DevicePath}: {ex}");
             }
         };
         device.StartMonitoring();

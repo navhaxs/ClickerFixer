@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using ClickerFixer.Desktop.Services;
 using ReactiveUI;
+using Serilog;
 
 namespace ClickerFixer.Desktop.UI;
 
@@ -35,7 +36,20 @@ public class MainViewModel : ReactiveObject, IDisposable
         if (Design.IsDesignMode)
             return;
         
-        Task.Delay(2000).ContinueWith((x) => { Discovery.Start(); });
+        Task.Delay(2000).ContinueWith((x) =>
+        {
+            try
+            {
+                Discovery.Start();
+            }
+            catch (Exception ex)
+            {
+                // Discovery.Start() already guards its own body, but this is an unobserved
+                // ContinueWith - belt and suspenders against anything thrown before that
+                // guard is reached (e.g. the Discovery property getter itself).
+                Log.Fatal(ex, "Failed to start Discovery");
+            }
+        });
     }
 
     public void Dispose()

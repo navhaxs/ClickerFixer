@@ -12,15 +12,22 @@ internal static class Global
 
 	public static void Init()
 	{
-		IDeserializer deserializer = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
+		ServerConfig = null;
+
 		if (File.Exists("app.yml"))
 		{
-			string input = File.ReadAllText("app.yml");
-			ServerConfig = deserializer.Deserialize<ServerConfig>(input);
+			try
+			{
+				IDeserializer deserializer = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
+				string input = File.ReadAllText("app.yml");
+				ServerConfig = deserializer.Deserialize<ServerConfig>(input);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[Global] app.yml is malformed, falling back to defaults: {ex}");
+			}
 		}
-		else
-		{
-			ServerConfig = new ServerConfig();
-		}
+
+		ServerConfig ??= new ServerConfig();
 	}
 }
