@@ -1,22 +1,25 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:ripple="clr-namespace:Material.Ripple"
-        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
-        xmlns:ui="clr-namespace:ClickerFixer.Desktop.UI"
-        xmlns:desktop="clr-namespace:ClickerFixer.Desktop"
-        xmlns:converters="clr-namespace:ClickerFixer.Desktop.UI.Converters"
-        mc:Ignorable="d" Width="280" Height="380"
-        x:Class="ClickerFixer.Desktop.MainWindow"
-        x:DataType="ui:MainViewModel"
-        Title="ClickerFixer.Desktop"
-        CanResize="False"
-        ShowInTaskbar="False"
-        CornerRadius="6"
-        ExtendClientAreaChromeHints="NoChrome"
-        ExtendClientAreaTitleBarHeightHint="90"
-        ExtendClientAreaToDecorationsHint="True">
+<Window
+    CanResize="False"
+    CornerRadius="6"
+    ExtendClientAreaChromeHints="NoChrome"
+    ExtendClientAreaTitleBarHeightHint="90"
+    ExtendClientAreaToDecorationsHint="True"
+    Height="380"
+    ShowInTaskbar="False"
+    Title="ClickerFixer.Desktop"
+    Width="280"
+    mc:Ignorable="d"
+    x:Class="ClickerFixer.Desktop.MainWindow"
+    x:DataType="ui:MainViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    xmlns:converters="clr-namespace:ClickerFixer.Desktop.UI.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:desktop="clr-namespace:ClickerFixer.Desktop"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ripple="clr-namespace:Material.Ripple"
+    xmlns:ui="clr-namespace:ClickerFixer.Desktop.UI"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Design.DataContext>
         <ui:DesignMainViewModel />
@@ -25,11 +28,12 @@
     <Window.Resources>
         <converters:ArrayIsEmptyVisibilityConverter x:Key="ArrayIsEmptyVisibilityConverter" />
         <converters:ArrayNotEmptyVisibilityConverter x:Key="ArrayNotEmptyVisibilityConverter" />
-        <Animation x:Key="ResourceAnimation"
-                   x:SetterTargetType="{x:Type avalonia:MaterialIcon}"
-                   IterationCount="1"
-                   FillMode="Forward"
-                   Duration="0:0:0.6">
+        <Animation
+            Duration="0:0:0.6"
+            FillMode="Forward"
+            IterationCount="1"
+            x:Key="ResourceAnimation"
+            x:SetterTargetType="{x:Type avalonia:MaterialIcon}">
             <KeyFrame Cue="0%">
                 <Setter Property="Opacity" Value="1.0" />
             </KeyFrame>
@@ -41,26 +45,46 @@
 
     <Grid>
 
-        <Border Background="#212121"
-                IsHitTestVisible="False">
+        <Border Background="#212121" IsHitTestVisible="False">
             <Grid>
 
+                <ItemsControl
+                    Margin="6"
+                    Name="EventsLog"
+                    VerticalAlignment="Bottom">
 
-                <ItemsControl Name="EventsLog" VerticalAlignment="Bottom" Margin="6">
+                    <ItemsControl.OpacityMask>
+                        <LinearGradientBrush EndPoint="0%,100%" StartPoint="0%,0%">
+                            <GradientStop Color="#11000000" Offset="0.0" />
+                            <GradientStop Color="#44000000" Offset="0.8" />
+                            <GradientStop Color="Black" Offset="1.0" />
+                        </LinearGradientBrush>
+                    </ItemsControl.OpacityMask>
+
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="desktop:CompletedAction">
                             <DockPanel AttachedToLogicalTree="StyledElement_OnAttachedToLogicalTree">
-                                <TextBlock Foreground="White" Text="{Binding}" VerticalAlignment="Center" Opacity="0">
+                                <TextBlock
+                                    Foreground="White"
+                                    Opacity="0"
+                                    Text="{Binding}"
+                                    VerticalAlignment="Center">
                                     <TextBlock.Transitions>
                                         <Transitions>
-                                            <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                            <DoubleTransition Duration="0:0:0.2" Property="Opacity" />
                                         </Transitions>
                                     </TextBlock.Transitions>
                                     <TextBlock.Styles>
                                         <Style Selector="TextBlock">
                                             <Style.Animations>
-                                                <Animation Duration="0:0:2.0" FillMode="Forward" IterationCount="1">
+                                                <Animation
+                                                    Duration="0:0:4.0"
+                                                    FillMode="Forward"
+                                                    IterationCount="1">
                                                     <KeyFrame Cue="0%">
+                                                        <Setter Property="Opacity" Value="1.0" />
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="70%">
                                                         <Setter Property="Opacity" Value="1.0" />
                                                     </KeyFrame>
                                                     <KeyFrame Cue="100%">
@@ -77,33 +101,45 @@
                 </ItemsControl>
 
                 <avalonia:MaterialIcon
-                    Kind="ChevronRight"
                     Foreground="White"
+                    Height="60"
+                    Kind="ChevronRight"
+                    Name="PART_Icon"
                     Opacity="0"
-                    Width="60" Height="60"
-                    Name="PART_Icon" />
-                <ripple:RippleEffect Name="PART_Ripple"
-                                     IsHitTestVisible="False"
-                                     RippleFill="Red"
-                                     RippleOpacity="0.3" />
+                    Width="60" />
+                <ripple:RippleEffect
+                    IsHitTestVisible="False"
+                    Name="PART_Ripple"
+                    RippleFill="Red"
+                    RippleOpacity="0.3" />
 
-                <DockPanel VerticalAlignment="Center" Margin="0 100 0 0">
+                <DockPanel Margin="0,100,0,0" VerticalAlignment="Center">
 
-                    <ItemsRepeater ItemsSource="{Binding Discovery.ConnectedSatellites}"
-                                   DockPanel.Dock="Bottom">
+                    <ItemsRepeater DockPanel.Dock="Bottom" ItemsSource="{Binding Discovery.ConnectedSatellites}">
                         <ItemsRepeater.Layout>
-                            <UniformGridLayout ItemsJustification="SpaceAround"
-                                               MaximumRowsOrColumns="1"
-                                               MinRowSpacing="6" />
+                            <UniformGridLayout
+                                ItemsJustification="SpaceAround"
+                                MaximumRowsOrColumns="1"
+                                MinRowSpacing="6" />
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="99" Background="#383838" HorizontalAlignment="Center">
-                                    <DockPanel Margin="4 2 12 2">
-                                        <Ellipse Fill="Chartreuse" DockPanel.Dock="Left" Width="12" Height="12"
-                                                 Margin="6" />
-                                        <TextBlock FontSize="14" Foreground="White" Text="{Binding}"
-                                                   VerticalAlignment="Center" />
+                                <Border
+                                    Background="#383838"
+                                    CornerRadius="99"
+                                    HorizontalAlignment="Center">
+                                    <DockPanel Margin="4,2,12,2">
+                                        <Ellipse
+                                            DockPanel.Dock="Left"
+                                            Fill="Chartreuse"
+                                            Height="12"
+                                            Margin="6"
+                                            Width="12" />
+                                        <TextBlock
+                                            FontSize="14"
+                                            Foreground="White"
+                                            Text="{Binding}"
+                                            VerticalAlignment="Center" />
                                     </DockPanel>
                                 </Border>
                             </DataTemplate>
@@ -113,17 +149,17 @@
                     <Grid>
                         <TextBlock
                             FontSize="22"
-                            Margin="0 10"
-                            Text="Connected"
                             HorizontalAlignment="Center"
-                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayNotEmptyVisibilityConverter}}" />
+                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayNotEmptyVisibilityConverter}}"
+                            Margin="0,10"
+                            Text="Connected" />
 
                         <TextBlock
                             FontSize="22"
-                            Margin="0 10"
-                            Text="Disconnected"
                             HorizontalAlignment="Center"
-                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayIsEmptyVisibilityConverter}}" />
+                            IsVisible="{Binding Discovery.ConnectedSatellites, Converter={StaticResource ArrayIsEmptyVisibilityConverter}}"
+                            Margin="0,10"
+                            Text="Disconnected" />
                     </Grid>
 
                 </DockPanel>
@@ -132,10 +168,13 @@
             </Grid>
         </Border>
 
-        <Button HorizontalAlignment="Right" VerticalAlignment="Top" Click="CloseButtonClicked">
+        <Button
+            Click="CloseButtonClicked"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top">
             <avalonia:MaterialIcon Kind="Times" />
         </Button>
-        
+
     </Grid>
 
 </Window>
