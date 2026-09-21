@@ -35,6 +35,7 @@ $Project = Join-Path $RepoRoot "ClickerFixer.Satellite\ClickerFixer.Satellite.cs
 $RID = "linux-arm64"
 $Configuration = "Release"
 $OutDir = Join-Path $RepoRoot "dist\satellite"
+$UnitFileLocal = Join-Path $RepoRoot "deploy\clicker.service"
 
 Write-Host "==> Cleaning $OutDir"
 if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
@@ -50,8 +51,23 @@ dotnet publish $Project `
     -o $OutDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
 
+Write-Host "==> Ensuring $Service is installed on the Pi"
+# First-ever deploy to a host has no unit file yet - "systemctl stop" on a
+# never-installed unit errors with "Unit ... not loaded." Install it here so
+# that error can't happen; harmless/idempotent on a host that already has it.
+$unitExists = (ssh $PiHost "test -f /etc/systemd/system/$Service && echo yes || echo no").Trim()
+if ($unitExists -ne "yes") {
+    Write-Host "    Not found on Pi - installing from $UnitFileLocal"
+    scp $UnitFileLocal "${PiHost}:/tmp/$Service"
+    if ($LASTEXITCODE -ne 0) { throw "scp of unit file failed with exit code $LASTEXITCODE" }
+    ssh $PiHost "sudo mv /tmp/$Service /etc/systemd/system/$Service && sudo systemctl daemon-reload && sudo systemctl enable '$Service'"
+    if ($LASTEXITCODE -ne 0) { throw "installing $Service failed with exit code $LASTEXITCODE" }
+} else {
+    Write-Host "    Already installed"
+}
+
 Write-Host "==> Stopping $Service (can't overwrite its running binary otherwise - ETXTBSY)"
-# Non-fatal: on a first-ever deploy the unit may not exist/be enabled yet.
+# Still non-fatal: stopping a loaded-but-never-started unit is a harmless no-op.
 ssh $PiHost "sudo systemctl stop '$Service'" 2>&1 | Write-Host
 
 Write-Host "==> Copying to ${PiHost}:${RemoteDir}"
