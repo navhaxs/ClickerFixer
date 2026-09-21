@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
@@ -11,7 +11,7 @@ namespace ClickerFixer.Desktop.ClickerTargets
     internal class VisionScreens : IClickerTarget, IDisposable
     {
         private Uri url;
-        private const string PROCESSNAME = "handsliftedapp";
+        private const string PROCESSNAME = "handsliftedapp.desktop";
         private EventWaitHandle _wh;
         private Thread _worker;
         private readonly object _locker;
@@ -66,7 +66,13 @@ namespace ClickerFixer.Desktop.ClickerTargets
         {
             using (var client = new WebsocketClient(url))
             {
-                client.ReconnectTimeout = TimeSpan.FromSeconds(15.0);
+                // HandsLifted's remote-control protocol is fire-and-forget: the server never
+                // sends anything back (no ack, by design). ReconnectTimeout reconnects when no
+                // message arrives from the server within the window - since that will never
+                // happen here, leaving it set (even to a long value) means this connection
+                // reconnects forever for no reason. Disabled entirely; TCP-level disconnects
+                // are still caught by Websocket.Client's own error handling regardless.
+                client.ReconnectTimeout = null;
                 client.ReconnectionHappened.Subscribe(info =>
                     Log.Information("VisionScreens (HandsLifted) reconnection happened, type: {ReconnectionType}", info.Type));
                 client.MessageReceived.Subscribe(msg =>
