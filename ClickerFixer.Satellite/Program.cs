@@ -135,18 +135,37 @@ namespace ClickerFixer.Satellite
                 }
             };
             
-            while (!tcs.Task.IsCompleted)
+            if (Console.IsInputRedirected)
             {
-                if (!Console.IsInputRedirected && Console.KeyAvailable)
+                // Under systemd, stdin is /dev/null - IsInputRedirected is true, so the
+                // interactive-key branch below never runs. The old code still spun this
+                // while loop with no delay regardless, pegging a full CPU core for the
+                // entire process lifetime (confirmed live on orangepi-r1plus: one thread
+                // at ~100% CPU since startup, zero corresponding log output - nothing in
+                // the loop body ever executes to log anything). Just block instead.
+                tcs.Task.Wait();
+            }
+            else
+            {
+                // Interactive console (manual/dev run): support Escape-to-quit. Still poll,
+                // but with a delay between checks instead of busy-spinning.
+                while (!tcs.Task.IsCompleted)
                 {
-                    ConsoleKey key = Console.ReadKey(true).Key;
-                    MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
+                    if (Console.KeyAvailable)
                     {
-                        KeyCode = (int)key
-                    }));
-                    if (key == ConsoleKey.Escape)
+                        ConsoleKey key = Console.ReadKey(true).Key;
+                        MyWebServer.Broadcast(JsonSerializer.Serialize(new KeyPressEventMessage
+                        {
+                            KeyCode = (int)key
+                        }));
+                        if (key == ConsoleKey.Escape)
+                        {
+                            break;
+                        }
+                    }
+                    else
                     {
-                        break;
+                        Thread.Sleep(50);
                     }
                 }
             }
