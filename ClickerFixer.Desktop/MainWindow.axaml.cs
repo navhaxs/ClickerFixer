@@ -38,8 +38,11 @@ public partial class MainWindow : Window
                 (int)sc.WorkingArea.Height - (int)((int)this.Bounds.Height * RenderScaling) - 8);
         };
 
-        if (DataContext is MainViewModel vm)
+        this.DataContextChanged += (_, _) =>
         {
+            if (DataContext is not MainViewModel vm)
+                return;
+
             vm.OnTrigger += (sender, msg) =>
             {
                 Dispatcher.UIThread.InvokeAsync(() =>
@@ -73,7 +76,7 @@ public partial class MainWindow : Window
                     }
                 });
             };
-        }
+        };
     }
 
     private void StyledElement_OnAttachedToLogicalTree(object? sender, LogicalTreeAttachmentEventArgs e)
