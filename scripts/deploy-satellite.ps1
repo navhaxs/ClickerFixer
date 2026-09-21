@@ -51,19 +51,26 @@ dotnet publish $Project `
     -o $OutDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
 
-Write-Host "==> Ensuring $Service is installed on the Pi"
-# First-ever deploy to a host has no unit file yet - "systemctl stop" on a
-# never-installed unit errors with "Unit ... not loaded." Install it here so
-# that error can't happen; harmless/idempotent on a host that already has it.
-$unitExists = (ssh $PiHost "test -f /etc/systemd/system/$Service && echo yes || echo no").Trim()
-if ($unitExists -ne "yes") {
-    Write-Host "    Not found on Pi - installing from $UnitFileLocal"
-    scp $UnitFileLocal "${PiHost}:/tmp/$Service"
-    if ($LASTEXITCODE -ne 0) { throw "scp of unit file failed with exit code $LASTEXITCODE" }
-    ssh $PiHost "sudo mv /tmp/$Service /etc/systemd/system/$Service && sudo systemctl daemon-reload && sudo systemctl enable '$Service'"
+Write-Host "==> Ensuring $Service unit file matches deploy/clicker.service"
+# Always resync, not just install-if-missing: a stale/incorrect unit file
+# already on the Pi (from a previous deploy, or hand-edited) would otherwise
+# never get corrected by re-running this script - exactly what happened when
+# an earlier version of deploy/clicker.service had the wrong ExecStart path
+# and this "install if missing" logic copied it once, then silently left it
+# there forever since the file already "existed" on every later run.
+$remoteUnitPath = "/etc/systemd/system/$Service"
+scp $UnitFileLocal "${PiHost}:/tmp/$Service"
+if ($LASTEXITCODE -ne 0) { throw "scp of unit file failed with exit code $LASTEXITCODE" }
+# cmp -s exits 0 if identical, 1 if different, 2+ on error (e.g. remote file
+# doesn't exist yet) - "echo `$?" surfaces that exit code over ssh's own.
+$cmpResult = (ssh $PiHost "cmp -s /tmp/$Service $remoteUnitPath; echo `$?").Trim()
+if ($cmpResult -ne "0") {
+    Write-Host "    Changed (or first install) - updating"
+    ssh $PiHost "sudo mv /tmp/$Service $remoteUnitPath && sudo systemctl daemon-reload && sudo systemctl enable '$Service'"
     if ($LASTEXITCODE -ne 0) { throw "installing $Service failed with exit code $LASTEXITCODE" }
 } else {
-    Write-Host "    Already installed"
+    Write-Host "    Already up to date"
+    ssh $PiHost "rm -f /tmp/$Service"
 }
 
 Write-Host "==> Stopping $Service (can't overwrite its running binary otherwise - ETXTBSY)"

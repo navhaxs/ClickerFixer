@@ -4,14 +4,16 @@
 #          sudo systemctl enable --now clicker.service
 [Unit]
 Description=ClickerFixerApp
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=notify
 NotifyAccess=main
 WatchdogSec=30
-ExecStart=/usr/bin/dotnet /opt/clicker/ClickerFixer.Satellite.dll
-WorkingDirectory=/opt/clicker
+ExecStart=/opt/clicker-fixer-app/ClickerFixer.Satellite
+WorkingDirectory=/opt/clicker-fixer-app
+User=pi
 Restart=on-failure
 RestartSec=5
 
