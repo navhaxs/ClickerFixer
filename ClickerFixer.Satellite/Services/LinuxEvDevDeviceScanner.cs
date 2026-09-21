@@ -31,15 +31,28 @@ internal sealed class LinuxEvDevDeviceScanner : IEvDevDeviceScanner
     /// a mouse sensor sitting idle commonly emits continuous low-level EV_REL jitter,
     /// which was measurable, sustained CPU spent dispatching events nobody uses.
     ///
-    /// Has EV_KEY AND no EV_REL: keeps plain keyboard-style interfaces (including a
-    /// USB receiver's separate keyboard/System-Control HID interfaces, which is where
-    /// a presentation clicker's next/prev buttons actually show up - as KEY_LEFT/
-    /// KEY_RIGHT, confirmed in production logs), while excluding the combined
-    /// mouse+buttons interface (has both EV_KEY and EV_REL) and the HDMI-CEC device
-    /// (same shape). A device with EV_KEY but no EV_REL never had relative-motion
-    /// noise to filter in the first place, so this can't be a regression for it.
+    /// Has EV_KEY, and not a genuine 2D pointer device: keeps plain keyboard-style
+    /// interfaces. An earlier version of this filter excluded ANY device with ANY
+    /// relative axis at all, which turned out to be wrong in production - a Logitech
+    /// receiver's "Keyboard" HID interface (where a presentation clicker's next/prev
+    /// buttons actually show up, as KEY_LEFT/KEY_RIGHT, confirmed in production logs)
+    /// commonly multiplexes an unrelated REL_WHEEL axis for a volume/scroll control
+    /// onto the same interface, and got wrongly excluded as if it were a mouse. Real
+    /// 2D pointer motion needs REL_X *and* REL_Y together (matching the vendored
+    /// library's own GuessDeviceType() mouse heuristic) - a lone REL_WHEEL doesn't
+    /// have both, so this now correctly keeps that interface while still excluding
+    /// real mice and the HDMI-CEC device (both report REL_X+REL_Y).
     /// </summary>
-    private static bool IsRelevant(EvDevDevice device) =>
-        device.Keys is { Count: > 0 } &&
-        device.RelativeAxises is not { Count: > 0 };
+    private static bool IsRelevant(EvDevDevice device)
+    {
+        if (device.Keys is not { Count: > 0 })
+            return false;
+
+        var relativeAxes = device.RelativeAxises;
+        bool isPointerDevice = relativeAxes != null
+            && relativeAxes.Contains(EvDevRelativeAxisCode.REL_X)
+            && relativeAxes.Contains(EvDevRelativeAxisCode.REL_Y);
+
+        return !isPointerDevice;
+    }
 }
