@@ -83,6 +83,14 @@ $publishedItems = (Get-ChildItem -Path $OutDir).FullName
 scp -r @publishedItems "${PiHost}:${RemoteDir}/"
 if ($LASTEXITCODE -ne 0) { throw "scp failed with exit code $LASTEXITCODE" }
 
+# scp from Windows never carries a Unix execute bit - Windows filesystems have
+# no such concept, so the binary lands on the Pi without +x regardless of what
+# it had here. Without this, both a manual run and systemd's ExecStart fail
+# with "Permission denied".
+Write-Host "==> Marking binary executable"
+ssh $PiHost "chmod +x '$RemoteDir/ClickerFixer.Satellite'"
+if ($LASTEXITCODE -ne 0) { throw "chmod failed with exit code $LASTEXITCODE" }
+
 Write-Host "==> Starting $Service"
 ssh $PiHost "sudo systemctl daemon-reload && sudo systemctl start '$Service'"
 if ($LASTEXITCODE -ne 0) { throw "ssh start failed with exit code $LASTEXITCODE" }
