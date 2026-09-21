@@ -32,11 +32,12 @@ namespace ClickerFixer.Desktop.Services
 
         public CompletedAction? OnKeyReceived(KeyPressEventMessage e)
         {
-            var activeClickerTarget = _targets.Find(x => x.IsActive());
+            var orderedTargets = TargetPriorityOrdering.Apply(_targets, Global.Config?.TargetPriority, t => t.GetType().Name);
+            var activeClickerTarget = orderedTargets.Find(x => x.IsActive());
             if (activeClickerTarget == null)
                 return null;
 
-            string name = activeClickerTarget.GetType().Name;
+            string name = activeClickerTarget is Native ? "send key events" : activeClickerTarget.GetType().Name;
             ActionType? action = null;
             switch (e.KeyCode)
             {

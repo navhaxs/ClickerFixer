@@ -24,7 +24,7 @@ public partial class App : Application
         {
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         }
-        
+
         vm = new MainViewModel();
 
         base.OnFrameworkInitializationCompleted();
@@ -49,6 +49,11 @@ public partial class App : Application
     private void ShowLogs_OnClick(object? sender, EventArgs e)
     {
         LogWindow.ShowOrActivate();
+    }
+
+    private void ShowSettings_OnClick(object? sender, EventArgs e)
+    {
+        SettingsWindow.ShowOrActivate();
     }
 
     private void NativeMenuItem_Exit_OnClick(object? sender, EventArgs e)

@@ -30,6 +30,11 @@ namespace ClickerFixer.Desktop
       }
 
       Global.Config ??= new Config();
+      Save();
+    }
+
+    public static void Save()
+    {
       File.WriteAllText(CONFIG_FILE, new SerializerBuilder().Build().Serialize((object) Global.Config));
     }
   }
